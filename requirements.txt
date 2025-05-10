@@ -4,3 +4,4 @@ jinja2
 passlib[bcrypt]
 python-multipart
 pydantic
+itsdangerous
