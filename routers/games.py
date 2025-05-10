@@ -18,11 +18,12 @@ def add_game_form(request: Request):
     if user["is_admin"] != 1:
         raise HTTPException(status_code=403, detail="Admins only")
 
-    # load all players
+    # load all players (no filtering)
     with get_db() as db:
-        all_players = db.execute("SELECT username FROM players").fetchall()
+        all_players = db.execute(
+            "SELECT username FROM players ORDER BY username"
+        ).fetchall()
 
-    # render with exactly the names your template expects
     return templates.TemplateResponse(
         "add_game.html",
         {
@@ -37,14 +38,18 @@ def add_game_form(request: Request):
 async def add_game(request: Request):
     user = get_current_user(request)
     if not user or user["is_admin"] != 1:
-        raise HTTPException(403, "Admins only")
+        raise HTTPException(status_code=403, detail="Admins only")
 
     form = await request.form()
     date  = form.get("date") or ""
     buyin = int(form.get("buyin", BUYIN_DEFAULT))
 
     with get_db() as db:
-        players = db.execute("SELECT username FROM players").fetchall()
+        # fetch all players (no filtering)
+        players = db.execute(
+            "SELECT username FROM players"
+        ).fetchall()
+
         for r in players:
             u = r["username"]
             if form.get(f"play_{u}"):
@@ -55,14 +60,13 @@ async def add_game(request: Request):
                 net     = cashout - cost
 
                 db.execute(
-                  "INSERT INTO games (date, winner, amount, rebuys) VALUES (?, ?, ?, ?)",
-                  (date, u, net, rebuys)
+                    "INSERT INTO games (date, winner, amount, rebuys) VALUES (?, ?, ?, ?)",
+                    (date, u, net, rebuys)
                 )
                 db.execute(
-                  "UPDATE players SET balance = balance + ? WHERE username = ?",
-                  (net, u)
+                    "UPDATE players SET balance = balance + ? WHERE username = ?",
+                    (net, u)
                 )
         db.commit()
 
     return RedirectResponse("/admin", status_code=302)
-

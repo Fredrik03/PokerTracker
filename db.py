@@ -1,4 +1,3 @@
-# db.py
 import sqlite3
 from config import DATABASE_URL
 
@@ -9,6 +8,7 @@ def get_db():
 
 def init_db():
     with get_db() as db:
+        # Players table
         db.execute("""
         CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,11 +18,22 @@ def init_db():
             is_admin INTEGER DEFAULT 0,
             must_set_password INTEGER DEFAULT 0
         )""")
+
+        # Games table with rebuys column
         db.execute("""
         CREATE TABLE IF NOT EXISTS games (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT NOT NULL,
             winner TEXT NOT NULL,
-            amount INTEGER NOT NULL
+            amount INTEGER NOT NULL,
+            rebuys INTEGER NOT NULL DEFAULT 0
         )""")
+
+        # Ensure existing DB has rebuys column
+        cols = [row[1] for row in db.execute("PRAGMA table_info(games)").fetchall()]
+        if "rebuys" not in cols:
+            db.execute(
+                "ALTER TABLE games ADD COLUMN rebuys INTEGER NOT NULL DEFAULT 0"
+            )
+
         db.commit()

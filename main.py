@@ -1,11 +1,12 @@
 # main.py
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from passlib.context import CryptContext
 
 import config, db
 from deps import get_current_user
@@ -13,26 +14,49 @@ from routers import auth, stats, dashboard, games, admin, profile, history, glob
 
 # 1) initialize DB
 db.init_db()
-
 app = FastAPI()
 
+# password hasher for bootstrap
+pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# 3) then your “must-set-password” guard as BaseHTTPMiddleware
+# 2) bootstrap admin on startup
+@app.on_event("startup")
+def bootstrap_admin():
+    from db import get_db
+    username = config.ADMIN_USERNAME  # ✅ use env variable for username
+
+    with get_db() as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM players WHERE username = ?", (username,)
+        ).fetchone()
+        if not exists:
+            conn.execute(
+                """
+                INSERT INTO players
+                  (username, password, is_admin, must_set_password)
+                VALUES (?, ?, 1, 1)
+                """,
+                (username, "")  # ✅ empty password to trigger first-time setup
+            )
+            conn.commit()
+            print(f"[startup] bootstrapped admin account '{username}', will require setting password on first login")
+
+
+
+
+# 3) "must-set-password" guard
 class InitialPasswordMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # if they’re flagged and not on an auth/static path, redirect them
+        # if flagged and not on an auth/static path, redirect to set-password
         if (
-            request.session.get("user")
-            and request.session.get("must_set_password")
-            and not request.url.path.startswith((
-                "/login","/register","/set-password","/static","/logout"
-            ))
+            request.session.get("user") and
+            request.session.get("must_set_password") and
+            not request.url.path.startswith(("/login", "/set-password", "/static", "/logout"))
         ):
             return RedirectResponse("/set-password", status_code=302)
         return await call_next(request)
 
 app.add_middleware(InitialPasswordMiddleware)
-
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_SECRET)
 
 # 4) templating & static
@@ -54,4 +78,3 @@ app.include_router(monthly_stats.router)
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
-
