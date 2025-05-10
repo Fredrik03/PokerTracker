@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+  <h1 class="text-3xl font-bold text-center mb-4">Leaderboard</h1>
+
+  <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+    <div class="overflow-x-auto">
+      <table class="w-full table-auto text-left text-sm">
+        <thead>
+          <tr class="border-b border-gray-600 text-gray-400 uppercase text-xs tracking-wider">
+            <th class="px-4 py-3">#</th>
+            <th class="px-4 py-3">
+              <a href="?sort=username" class="hover:underline">
+                User {% if current_sort == 'username' %}▲{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-right">
+              <a href="?sort=balance" class="hover:underline">
+                Balance {% if current_sort == 'balance' %}▲{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-right">
+              <a href="?sort=games" class="hover:underline">
+                Games {% if current_sort == 'games' %}▲{% endif %}
+              </a>
+            </th>
+            <th class="px-4 py-3 text-right">
+              <a href="?sort=rebuys" class="hover:underline">
+                Re-buys {% if current_sort == 'rebuys' %}▲{% endif %}
+              </a>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+          {% for p in players %}
+            {% if loop.index == 1 %}
+              {% set row_class = "bg-amber-400/30" %}
+            {% elif loop.index == 2 %}
+              {% set row_class = "bg-gray-500/20" %}
+            {% elif loop.index == 3 %}
+              {% set row_class = "bg-amber-600/25" %}
+            {% else %}
+              {% set row_class = loop.index is even and "bg-gray-900" or "" %}
+            {% endif %}
+          <tr class="{{ row_class }}">
+            <td class="px-4 py-3">{{ loop.index }}</td>
+            <td class="px-4 py-3">{{ p.username }}</td>
+            <td class="px-4 py-3 text-right">{{ p.balance }}</td>
+            <td class="px-4 py-3 text-right">{{ p.games_played }}</td>
+            <td class="px-4 py-3 text-right">{{ p.total_rebuys }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="px-4 py-4 text-center text-gray-400">No players yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

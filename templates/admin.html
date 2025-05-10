@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+  <!-- Create User -->
+  <section class="bg-gray-800 p-6 rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">Create New User</h2>
+    <form method="post" action="/create-user" class="space-y-4">
+      <div>
+        <label class="block text-sm mb-1">Username</label>
+        <input name="username" class="w-full p-2 bg-gray-700 rounded" required>
+      </div>
+      <div class="flex items-center">
+        <input type="checkbox" name="is_admin" value="1" id="adminChk" class="mr-2">
+        <label for="adminChk" class="text-sm">Make admin</label>
+      </div>
+      <button type="submit"
+              class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded transition">
+        Create User
+      </button>
+    </form>
+  </section>
+
+  <!-- Delete Users -->
+  <section class="bg-gray-800 p-6 rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">Manage Users</h2>
+    <table class="w-full text-left bg-gray-700 rounded">
+      <thead><tr class="border-b border-gray-600">
+        <th class="px-3 py-2">User</th>
+        <th class="px-3 py-2">Admin?</th>
+        <th class="px-3 py-2">Action</th>
+      </tr></thead>
+      <tbody>
+        {% for p in players %}
+        <tr class="even:bg-gray-800">
+          <td class="px-3 py-2">{{ p.username }}</td>
+          <td class="px-3 py-2">{{ '✅' if p.is_admin else '—' }}</td>
+          <td class="px-3 py-2">
+            {% if p.username != request.session.get('user') %}
+            <form method="post" action="/delete-user" class="inline">
+              <input type="hidden" name="username" value="{{ p.username }}">
+              <button type="submit"
+                      class="text-red-400 hover:text-red-300 text-sm">
+                Delete
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+<!-- Add Game -->
+<section class="bg-gray-800 p-6 rounded shadow">
+  <h2 class="text-xl font-semibold mb-4">Add New Game</h2>
+  <form method="post" action="/add-game" class="space-y-4">
+    <div>
+      <label class="block text-sm mb-1">Date</label>
+      <input type="date" name="date" class="p-2 bg-gray-700 rounded" required>
+    </div>
+    <div>
+      <label class="block text-sm mb-1">Buy-in</label>
+      <input type="number" name="buyin" value="{{ buyin }}"
+             class="p-2 bg-gray-700 rounded" required>
+    </div>
+
+    <!-- column headers -->
+    <div class="flex items-center space-x-2 text-gray-300 font-semibold border-b border-gray-600 pb-1">
+      <div class="w-5"></div>
+      <div class="flex-1">Player</div>
+      <div class="w-20 text-center">Cash-out</div>
+      <div class="w-16 text-center">Re-buys</div>
+    </div>
+
+    <p class="mb-2 text-sm">
+      Check all participants and enter each cash-out and how many extra buy-ins they took:
+    </p>
+    <div class="space-y-2 max-h-64 overflow-y-auto">
+      {% for p in all_players %}
+        <div class="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            name="play_{{ p.username }}"
+            id="play_{{ p.username }}"
+            class="w-5 h-5"
+          >
+          <label for="play_{{ p.username }}" class="flex-1">{{ p.username }}</label>
+          <!-- cash-out amount -->
+          <input
+            type="number"
+            name="amount_{{ p.username }}"
+            value="0"
+            placeholder="0"
+            class="w-20 p-1 bg-gray-700 rounded text-right"
+            title="Cash-out amount"
+          >
+          <!-- number of extra buy-ins -->
+          <input
+            type="number"
+            name="rebuys_{{ p.username }}"
+            value="0"
+            min="0"
+            placeholder="0"
+            class="w-16 p-1 bg-gray-700 rounded text-right"
+            title="Number of re-buys"
+          >
+        </div>
+      {% endfor %}
+    </div>
+
+    <button
+      type="submit"
+      class="bg-yellow-600 hover:bg-yellow-500 px-4 py-2 rounded transition"
+    >
+      Add Game
+    </button>
+  </form>
+</section>
+{% endblock %}
