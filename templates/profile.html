@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="bg-gray-800 p-6 rounded-lg shadow-lg space-y-4">
+  <h2 class="text-2xl font-semibold text-center">My Profile</h2>
+  <ul class="space-y-1">
+    <li><strong>Username:</strong> {{ username }}</li>
+    <li><strong>Balance:</strong> {{ balance }} NOK</li>
+    <li><strong>Admin:</strong> {{ 'Yes' if is_admin else 'No' }}</li>
+  </ul>
+
+  <hr class="border-gray-700">
+
+  <h3 class="text-xl font-semibold">Change Password</h3>
+  {% if msg %}
+    <p class="text-green-400">{{ msg }}</p>
+  {% endif %}
+  {% if error %}
+    <p class="text-red-400">{{ error }}</p>
+  {% endif %}
+  <form method="post" action="/profile/change-password" class="space-y-4">
+    <div>
+      <label class="block mb-1">Old Password</label>
+      <input name="old_password" type="password"
+             class="w-full bg-gray-700 border border-gray-600 rounded p-2"/>
+    </div>
+    <div>
+      <label class="block mb-1">New Password</label>
+      <input name="new_password" type="password"
+             class="w-full bg-gray-700 border border-gray-600 rounded p-2"/>
+    </div>
+    <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 rounded py-2 font-medium transition">
+      Update Password
+    </button>
+  </form>
+</div>
+{% endblock %}

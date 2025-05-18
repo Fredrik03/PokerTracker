@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Global Stats{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+  <h1 class="text-3xl font-bold text-center mb-4">Global Stats</h1>
+
+  <!-- Summary cards (2x2 layout) -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- First row -->
+    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
+      <h3 class="text-base font-medium text-gray-400">Total Games Played</h3>
+      <p class="text-3xl font-extrabold text-white mt-2">{{ total_games }}</p>
+    </div>
+
+    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
+      <h3 class="text-base font-medium text-gray-400">Total Money Circulated</h3>
+      <p class="text-3xl font-extrabold text-white mt-2">{{ total_money }} NOK</p>
+    </div>
+
+    <!-- Second row -->
+    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
+      <h3 class="text-base font-medium text-gray-400">Unique Winners</h3>
+      <p class="text-3xl font-extrabold text-green-500 mt-2">{{ unique_winners }}</p>
+    </div>
+
+    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
+      <h3 class="text-base font-medium text-gray-400">Top Player</h3>
+      <p class="text-xl font-bold text-yellow-400 mt-1">{{ top_player }}</p>
+    </div>
+  </div>
+
+  <!-- Top players table -->
+  <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+    <h2 class="text-xl font-semibold mb-4">Top 5 Players</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full table-auto text-left text-sm">
+        <thead>
+          <tr class="border-b border-gray-600 text-gray-400 uppercase text-xs tracking-wider">
+            <th class="px-4 py-2">Player</th>
+            <th class="px-4 py-2">Total Won</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+          {% for p in top_players %}
+          <tr>
+            <td class="px-4 py-2">{{ p['winner'] }}</td>
+            <td class="px-4 py-2">{{ p['total_won'] }} NOK</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Chart section -->
+  <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+    <h2 class="text-xl font-semibold mb-4">Cumulative Player Progress</h2>
+    <canvas id="progressChart" class="w-full h-64"></canvas>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+fetch('/global-stats-data')
+  .then(res => res.json())
+  .then(({ labels, datasets }) => {
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        scales: {
+          x: { display: true, title: { display: true, text: 'Game Date' } },
+          y: { display: true, title: { display: true, text: 'Balance (NOK)' } }
+        },
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  });
+</script>
+{% endblock %}

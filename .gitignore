@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+poker.db
+
+# IDE / OS files
+.idea/
+.DS_Store
+Thumbs.db
