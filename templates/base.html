@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    /* Underline animation for nav links */
     nav ul li a {
       position: relative;
       overflow: hidden;
@@ -27,7 +26,6 @@
       width: 100%;
     }
 
-    /* Mobile menu slide animation */
     @media (max-width: 1023px) {
       #mobile-menu {
         max-height: 0;
@@ -39,7 +37,6 @@
       }
     }
 
-    /* Force layout for large screens */
     @media (min-width: 1024px) {
       #mobile-menu {
         max-height: none !important;
@@ -47,9 +44,19 @@
         display: flex !important;
       }
     }
+
+    #particles {
+      position: fixed;
+      inset: 0;
+      z-index: -10;
+      pointer-events: none;
+    }
   </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen font-sans">
+<body class="bg-gray-900 text-white min-h-screen font-sans relative">
+
+<!-- 🌌 Particles Background Only -->
+<div id="particles"></div>
 
 {% if request.session.get('user') and not request.session.get('must_set_password') %}
   <nav class="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700 px-4 lg:px-6 py-3 sticky top-0 z-50 shadow-md">
@@ -91,10 +98,11 @@
   </nav>
 {% endif %}
 
-<main class="py-8 px-4 max-w-screen-xl mx-auto">
+<main class="py-8 px-4 max-w-screen-xl mx-auto z-10 relative">
   {% block content %}{% endblock %}
 </main>
 
+<!-- Scripts -->
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     const button = document.getElementById('mobile-menu-button');
@@ -102,6 +110,31 @@
     button.addEventListener('click', () => {
       menu.classList.toggle('open');
     });
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+<script>
+  tsParticles.load("particles", {
+    fullScreen: { enable: false },
+    background: { color: "transparent" },
+    particles: {
+      number: { value: 60 },
+      color: { value: "#ffffff" },
+      shape: { type: "circle" },
+      opacity: { value: 0.1 },
+      size: { value: { min: 1, max: 3 } },
+      move: { enable: true, speed: 0.5 }
+    },
+    interactivity: {
+      events: {
+        onHover: { enable: true, mode: "repulse" },
+        resize: true
+      },
+      modes: {
+        repulse: { distance: 100 }
+      }
+    }
   });
 </script>
 
