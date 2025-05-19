@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Poker Tracker{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/flowbite@1.8.0/dist/flowbite.min.js"></script>
 
   <style>
-    /* Underline slide-in animation for navbar links */
+    /* Underline animation for nav links */
     nav ul li a {
       position: relative;
       overflow: hidden;
@@ -21,22 +20,45 @@
       height: 2px;
       bottom: 0;
       left: 0;
-      background-color: #3b82f6; /* Tailwind blue-500 */
+      background-color: #3b82f6;
       transition: width 0.3s ease;
     }
     nav ul li a:hover::after {
       width: 100%;
     }
+
+    /* Mobile menu slide animation */
+    @media (max-width: 1023px) {
+      #mobile-menu {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-in-out;
+      }
+      #mobile-menu.open {
+        max-height: 500px;
+      }
+    }
+
+    /* Force layout for large screens */
+    @media (min-width: 1024px) {
+      #mobile-menu {
+        max-height: none !important;
+        overflow: visible !important;
+        display: flex !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen font-sans">
 
-  {% if request.session.get('user') and not request.session.get('must_set_password') %}
-  <nav class="bg-gray-800 border-b border-gray-700 px-4 lg:px-6 py-3">
+{% if request.session.get('user') and not request.session.get('must_set_password') %}
+  <nav class="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700 px-4 lg:px-6 py-3 sticky top-0 z-50 shadow-md">
     <div class="flex flex-wrap justify-between items-center max-w-screen-xl mx-auto">
-      <a href="/dashboard" class="text-xl font-bold">♠️ Poker Tracker</a>
+      <a href="/dashboard" class="text-xl font-extrabold tracking-tight text-white">
+        ♠️ <span class="text-blue-500">Poker</span> Tracker
+      </a>
 
-      <button data-collapse-toggle="mobile-menu" type="button"
+      <button id="mobile-menu-button" type="button"
               class="inline-flex items-center p-2 ml-3 text-gray-400 lg:hidden hover:bg-gray-700 rounded"
               aria-controls="mobile-menu" aria-expanded="false">
         <span class="sr-only">Open main menu</span>
@@ -49,28 +71,40 @@
         </svg>
       </button>
 
-      <div class="hidden w-full lg:flex lg:items-center lg:w-auto" id="mobile-menu">
-        <ul class="flex flex-col mt-3 lg:flex-row lg:space-x-6 lg:mt-0">
-          <li><a href="/dashboard"    class="block px-4 py-2">Dashboard</a></li>
-          <li><a href="/leaderboard"  class="block px-4 py-2">Leaderboard</a></li>
-          <li><a href="/monthly-stats"     class="block px-4 py-2">Monthly Stats</a></li>
-          <li><a href="/global-stats"     class="block px-4 py-2">Global Stats</a></li>
-          <li><a href="/history"      class="block px-4 py-2">History</a></li>
-          <li><a href="/profile"      class="block px-4 py-2">Profile</a></li>
+      <div class="w-full lg:w-auto lg:items-center" id="mobile-menu">
+        <ul class="flex flex-col space-y-1 mt-3 lg:flex-row lg:space-y-0 lg:space-x-6 lg:mt-0 text-base font-medium">
+          <li><a href="/dashboard"     class="inline-block px-4 py-2 hover:text-blue-400 transition">Dashboard</a></li>
+          <li><a href="/leaderboard"   class="inline-block px-4 py-2 hover:text-blue-400 transition">Leaderboard</a></li>
+          <li><a href="/monthly-stats" class="inline-block px-4 py-2 hover:text-blue-400 transition">Monthly Stats</a></li>
+          <li><a href="/global-stats"  class="inline-block px-4 py-2 hover:text-blue-400 transition">Global Stats</a></li>
+          <li><a href="/history"       class="inline-block px-4 py-2 hover:text-blue-400 transition">History</a></li>
+          <li><a href="/profile"       class="inline-block px-4 py-2 hover:text-blue-400 transition">Profile</a></li>
 
           {% if request.session.get('is_admin') == 1 %}
-            <li><a href="/admin"        class="block px-4 py-2">Admin Panel</a></li>
+            <li><a href="/admin"       class="inline-block px-4 py-2 hover:text-blue-400 transition">Admin Panel</a></li>
           {% endif %}
 
-          <li><a href="/logout"       class="block px-4 py-2">Logout</a></li>
+          <li><a href="/logout"        class="inline-block px-4 py-2 hover:text-blue-400 transition">Logout</a></li>
         </ul>
       </div>
     </div>
   </nav>
-  {% endif %}
+{% endif %}
 
-  <main class="py-8 px-4 max-w-screen-xl mx-auto">
-    {% block content %}{% endblock %}
-  </main>
+<main class="py-8 px-4 max-w-screen-xl mx-auto">
+  {% block content %}{% endblock %}
+</main>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const button = document.getElementById('mobile-menu-button');
+    const menu = document.getElementById('mobile-menu');
+    button.addEventListener('click', () => {
+      menu.classList.toggle('open');
+    });
+  });
+</script>
+
 </body>
 </html>
+uj
