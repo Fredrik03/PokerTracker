@@ -2,15 +2,26 @@
 {% block title %}Game History{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
+<style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
-  <h1 class="text-3xl font-bold text-center mb-4">Game History</h1>
+  .fade-in {
+    animation: fadeIn 0.5s ease-out both;
+  }
+</style>
+
+<div class="fade-in space-y-8 max-w-5xl mx-auto mt-8">
+
+  <h1 class="text-4xl font-bold text-center text-white">Game History</h1>
 
   <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
     <div class="overflow-x-auto">
-      <table class="w-full table-auto text-left text-sm">
+      <table class="w-full table-auto text-sm text-left">
         <thead>
-          <tr class="border-b border-gray-600 text-gray-400 uppercase text-xs tracking-wider">
+          <tr class="text-gray-400 uppercase text-xs tracking-wider border-b border-gray-600">
             <th class="px-4 py-3">Date</th>
             <th class="px-4 py-3">Winner</th>
             <th class="px-4 py-3 text-right">Amount</th>
@@ -18,10 +29,10 @@
         </thead>
         <tbody class="divide-y divide-gray-700">
           {% for game in games %}
-          <tr>
+          <tr class="{{ loop.index is even and 'bg-gray-900' or '' }}">
             <td class="px-4 py-3">{{ game.date }}</td>
             <td class="px-4 py-3">{{ game.winner }}</td>
-            <td class="px-4 py-3 text-right {{ 'text-green-400' if game.amount >= 0 else 'text-red-400' }}">
+            <td class="px-4 py-3 text-right font-semibold {{ 'text-green-400' if game.amount >= 0 else 'text-red-400' }}">
               {{ game.amount }} NOK
             </td>
           </tr>

@@ -16,10 +16,16 @@ def init_db():
             password TEXT NOT NULL,
             balance INTEGER DEFAULT 0,
             is_admin INTEGER DEFAULT 0,
-            must_set_password INTEGER DEFAULT 0
+            must_set_password INTEGER DEFAULT 0,
+            avatar_path TEXT
         )""")
 
-        # Games table with rebuys column
+        # Ensure avatar_path exists (in case upgrading)
+        player_cols = [row[1] for row in db.execute("PRAGMA table_info(players)").fetchall()]
+        if "avatar_path" not in player_cols:
+            db.execute("ALTER TABLE players ADD COLUMN avatar_path TEXT")
+
+        # Games table
         db.execute("""
         CREATE TABLE IF NOT EXISTS games (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,14 +35,12 @@ def init_db():
             rebuys INTEGER NOT NULL DEFAULT 0
         )""")
 
-        # Ensure existing DB has rebuys column (for backward compatibility)
-        cols = [row[1] for row in db.execute("PRAGMA table_info(games)").fetchall()]
-        if "rebuys" not in cols:
-            db.execute(
-                "ALTER TABLE games ADD COLUMN rebuys INTEGER NOT NULL DEFAULT 0"
-            )
+        # Ensure rebuys exists
+        game_cols = [row[1] for row in db.execute("PRAGMA table_info(games)").fetchall()]
+        if "rebuys" not in game_cols:
+            db.execute("ALTER TABLE games ADD COLUMN rebuys INTEGER NOT NULL DEFAULT 0")
 
-        # GamePlayers table (NEW)
+        # GamePlayers table
         db.execute("""
         CREATE TABLE IF NOT EXISTS game_players (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

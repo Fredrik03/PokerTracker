@@ -6,6 +6,28 @@
   <title>{% block title %}Poker Tracker{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/flowbite@1.8.0/dist/flowbite.min.js"></script>
+
+  <style>
+    /* Underline slide-in animation for navbar links */
+    nav ul li a {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+    }
+    nav ul li a::after {
+      content: "";
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: 0;
+      left: 0;
+      background-color: #3b82f6; /* Tailwind blue-500 */
+      transition: width 0.3s ease;
+    }
+    nav ul li a:hover::after {
+      width: 100%;
+    }
+  </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen font-sans">
 
@@ -29,18 +51,18 @@
 
       <div class="hidden w-full lg:flex lg:items-center lg:w-auto" id="mobile-menu">
         <ul class="flex flex-col mt-3 lg:flex-row lg:space-x-6 lg:mt-0">
-          <li><a href="/dashboard"    class="block px-4 py-2 hover:bg-gray-700 rounded">Dashboard</a></li>
-          <li><a href="/leaderboard"  class="block px-4 py-2 hover:bg-gray-700 rounded">Leaderboard</a></li>
-          <li><a href="/monthly-stats"     class="block px-4 py-2 hover:bg-gray-700 rounded">Monthly Stats</a></li>
-          <li><a href="/global-stats"     class="block px-4 py-2 hover:bg-gray-700 rounded">Global Stats</a></li>
-          <li><a href="/history"      class="block px-4 py-2 hover:bg-gray-700 rounded">History</a></li>
-          <li><a href="/profile"      class="block px-4 py-2 hover:bg-gray-700 rounded">Profile</a></li>
+          <li><a href="/dashboard"    class="block px-4 py-2">Dashboard</a></li>
+          <li><a href="/leaderboard"  class="block px-4 py-2">Leaderboard</a></li>
+          <li><a href="/monthly-stats"     class="block px-4 py-2">Monthly Stats</a></li>
+          <li><a href="/global-stats"     class="block px-4 py-2">Global Stats</a></li>
+          <li><a href="/history"      class="block px-4 py-2">History</a></li>
+          <li><a href="/profile"      class="block px-4 py-2">Profile</a></li>
 
           {% if request.session.get('is_admin') == 1 %}
-            <li><a href="/admin"        class="block px-4 py-2 hover:bg-gray-700 rounded">Admin Panel</a></li>
+            <li><a href="/admin"        class="block px-4 py-2">Admin Panel</a></li>
           {% endif %}
 
-          <li><a href="/logout"       class="block px-4 py-2 hover:bg-gray-700 rounded">Logout</a></li>
+          <li><a href="/logout"       class="block px-4 py-2">Logout</a></li>
         </ul>
       </div>
     </div>

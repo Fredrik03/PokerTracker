@@ -1,20 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Login - Username{% endblock %}
+{% block title %}Login{% endblock %}
+
 {% block content %}
-<div class="bg-gray-800 p-6 rounded-lg shadow-lg space-y-4">
-  <h2 class="text-2xl font-semibold text-center">Log In</h2>
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fadeIn 0.5s ease-out both;
+}
+</style>
+
+<div class="fade-in bg-gray-800/80 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-xl space-y-6 max-w-md mx-auto mt-20">
+
+  <h2 class="text-2xl font-semibold text-center text-white">Log In</h2>
+
   {% if error %}
     <p class="text-red-400 text-center">{{ error }}</p>
   {% endif %}
-  <form method="post" action="/login-username" class="space-y-4">
+
+  <form method="post" action="/login" class="space-y-5">
     <div>
-      <label class="block mb-1">Username</label>
-      <input name="username" type="text"
-             class="w-full bg-gray-700 border border-gray-600 rounded p-2 focus:ring-blue-500 focus:border-blue-500"/>
+      <label class="block mb-1 text-sm font-medium text-gray-300">Username</label>
+      <input name="username" type="text" required
+             class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-500"/>
     </div>
+
+    <div>
+      <label class="block mb-1 text-sm font-medium text-gray-300">Password</label>
+      <input name="password" type="password" required
+             class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white placeholder-gray-400 focus:outline-none focus:ring focus:ring-blue-500"/>
+    </div>
+
     <button type="submit"
-            class="w-full bg-blue-600 hover:bg-blue-700 rounded py-2 font-medium transition">
-      Next
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 font-semibold transition duration-200 shadow hover:shadow-lg transform hover:-translate-y-0.5">
+      Log In
     </button>
   </form>
 </div>

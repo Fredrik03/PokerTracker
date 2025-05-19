@@ -72,6 +72,40 @@ def set_password(request: Request,
     request.session.pop("must_set_password", None)
     return RedirectResponse("/dashboard", 302)
 
+@router.get("/register")
+def register_form(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request, "error": None})
+
+
+@router.post("/register")
+@limiter.limit("5/minute")
+def register_username(request: Request, username: str = Form(...)):
+    with get_db() as db:
+        user = db.execute("SELECT * FROM players WHERE username = ?", (username,)).fetchone()
+
+    if not user:
+        return templates.TemplateResponse(
+            "register.html",
+            {
+                "request": request,
+                "error": "This account has not yet been created. Please contact the admin."
+            }
+        )
+
+    if not user["must_set_password"]:
+        return templates.TemplateResponse(
+            "register.html",
+            {
+                "request": request,
+                "error": "This account has already been registered. Please log in instead."
+            }
+        )
+
+    # OK: redirect to /set-password
+    request.session["user"] = username
+    request.session["is_admin"] = user["is_admin"]
+    request.session["must_set_password"] = True
+    return RedirectResponse("/set-password", status_code=302)
 
 @router.get("/logout")
 def logout(request: Request):

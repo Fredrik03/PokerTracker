@@ -2,43 +2,56 @@
 {% block title %}Monthly Stats{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
+<style>
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
-  <h1 class="text-3xl font-bold text-center mb-4">Monthly Stats</h1>
+  .fade-in {
+    animation: fadeInUp 0.5s ease-out both;
+  }
+</style>
 
-  <!-- ✅ Single-column summary cards -->
-  <div class="grid grid-cols-1 gap-8">
+<div class="fade-in space-y-12 max-w-4xl mx-auto mt-8">
 
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
-      <h3 class="text-base font-medium text-gray-400">Total Games Played</h3>
-      <p class="text-3xl font-extrabold text-white mt-2">{{ total_games }}</p>
+  <h1 class="text-4xl font-bold text-center text-white">Monthly Stats</h1>
+
+  <!-- Summary Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+      <h3 class="text-gray-400 text-sm">Total Games</h3>
+      <p class="text-3xl font-bold text-white mt-1">{{ total_games }}</p>
     </div>
-
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
-      <h3 class="text-base font-medium text-gray-400">Total Money Circulated</h3>
-      <p class="text-3xl font-extrabold text-white mt-2">{{ total_money }} NOK</p>
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+      <h3 class="text-gray-400 text-sm">Total Money Played</h3>
+      <p class="text-3xl font-bold text-white mt-1">{{ total_money }} NOK</p>
     </div>
-
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
-      <h3 class="text-base font-medium text-gray-400">Top Earner</h3>
-      <p class="text-xl font-bold text-green-400 mt-1">{{ top_earner }}: {{ top_earner_amount }} NOK</p>
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+      <h3 class="text-gray-400 text-sm">Avg Profit Per Game</h3>
+      <p class="text-3xl font-bold {{ 'text-green-400' if avg_profit and avg_profit >= 0 else 'text-red-400' }} mt-1">
+        {{ avg_profit or 0 }} NOK
+      </p>
     </div>
-
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
-      <h3 class="text-base font-medium text-gray-400">Top Loser</h3>
-      <p class="text-xl font-bold text-red-400 mt-1">{{ top_loser }}: {{ top_loser_amount }} NOK</p>
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+      <h3 class="text-gray-400 text-sm">Biggest Win</h3>
+      <p class="text-3xl font-bold text-white mt-1">{{ biggest_win }} NOK</p>
+      <p class="text-sm text-gray-300">by {{ biggest_winner }}</p>
     </div>
+  </div>
 
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
-      <h3 class="text-base font-medium text-gray-400">Average Profit</h3>
-      <p class="text-3xl font-extrabold text-white mt-2">{{ avg_profit }} NOK</p>
+  <!-- Top Earners & Losers -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-green-800/30 border border-green-600 p-6 rounded-lg shadow-lg">
+      <h3 class="text-xl font-semibold text-green-300 mb-2">Top Earner</h3>
+      <p class="text-white text-2xl font-bold">{{ top_earner_amount }} NOK</p>
+      <p class="text-sm text-green-200">by {{ top_earner }}</p>
     </div>
-
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex flex-col items-center justify-center">
-      <h3 class="text-base font-medium text-gray-400">Biggest Win</h3>
-      <p class="text-xl font-bold text-yellow-400 mt-1">{{ biggest_winner }}: {{ biggest_win }} NOK</p>
+    <div class="bg-red-800/30 border border-red-600 p-6 rounded-lg shadow-lg">
+      <h3 class="text-xl font-semibold text-red-300 mb-2">Top Loser</h3>
+      <p class="text-white text-2xl font-bold">{{ top_loser_amount }} NOK</p>
+      <p class="text-sm text-red-200">by {{ top_loser }}</p>
     </div>
-
   </div>
 
 </div>

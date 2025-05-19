@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}{{ username }}'s Stats{% endblock %}
 
 {% block content %}
 <style>
@@ -14,34 +14,40 @@
 
 <div class="fade-in space-y-10 max-w-5xl mx-auto mt-6">
 
-  <h1 class="text-4xl font-bold text-center text-white tracking-tight">Dashboard</h1>
-
-  <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-xl text-center text-xl font-semibold text-white">
-    Welcome, {{ username }}
+  <div class="flex items-center space-x-4 justify-center">
+    {% if avatar_path %}
+      <img src="{{ avatar_path }}" alt="avatar"
+           class="w-20 h-20 rounded-full object-cover border-2 border-gray-600 shadow" />
+    {% else %}
+      <div class="w-20 h-20 rounded-full bg-gray-600 flex items-center justify-center text-white text-3xl font-bold shadow">
+        {{ username[0] | upper }}
+      </div>
+    {% endif %}
+    <h1 class="text-4xl font-bold text-white tracking-tight">{{ username }}'s Dashboard</h1>
   </div>
 
   <!-- Summary cards -->
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
     <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
       <h3 class="text-sm font-medium text-gray-400">Total Sessions</h3>
-      <p class="text-3xl font-bold text-white mt-2">{{ total_games }}</p>
+      <p class="text-3xl font-bold text-white mt-2">{{ total_games or 0 }}</p>
     </div>
     <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
       <h3 class="text-sm font-medium text-gray-400">Net Profit / Loss</h3>
-      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if net_sum >= 0 else 'text-red-400' }}">
-        {{ net_sum }} NOK
+      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if (net_sum or 0) >= 0 else 'text-red-400' }}">
+        {{ net_sum or 0 }} NOK
       </p>
     </div>
     <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
       <h3 class="text-sm font-medium text-gray-400">Avg Profit</h3>
-      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if avg_profit >= 0 else 'text-red-400' }}">
-        {{ avg_profit }} NOK
+      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if (avg_profit or 0) >= 0 else 'text-red-400' }}">
+        {{ avg_profit or 0 }} NOK
       </p>
     </div>
     <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
       <h3 class="text-sm font-medium text-gray-400">Win Rate</h3>
-      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if avg_profit >= 0 else 'text-red-400' }}">
-        {{ win_rate }} %
+      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if (win_rate or 0) >= 0 else 'text-red-400' }}">
+        {{ win_rate or 0 }} %
       </p>
     </div>
   </div>

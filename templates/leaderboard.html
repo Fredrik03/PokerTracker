@@ -2,17 +2,31 @@
 {% block title %}Leaderboard{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
+<style>
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
-  <h1 class="text-3xl font-bold text-center mb-4">Leaderboard</h1>
+  .fade-in {
+    animation: fadeInUp 0.5s ease-out both;
+  }
 
-  <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+  .gold { background-color: rgba(255, 215, 0, 0.12); }
+  .silver { background-color: rgba(192,192,192, 0.12); }
+  .bronze { background-color: rgba(205, 127, 50, 0.12); }
+</style>
+
+<div class="fade-in space-y-10 max-w-5xl mx-auto mt-6">
+  <h1 class="text-4xl font-bold text-center text-white tracking-tight">🏆 Leaderboard</h1>
+
+  <section class="bg-gray-800/80 backdrop-blur-sm p-8 rounded-xl shadow-xl">
     <div class="overflow-x-auto">
-      <table class="w-full table-auto text-left text-sm">
+      <table class="w-full table-auto text-sm">
         <thead>
           <tr class="border-b border-gray-600 text-gray-400 uppercase text-xs tracking-wider">
             <th class="px-4 py-3">#</th>
-            <th class="px-4 py-3">
+            <th class="px-4 py-3 text-left">
               <a href="?sort=username" class="hover:underline">
                 User {% if current_sort == 'username' %}▲{% endif %}
               </a>
@@ -36,19 +50,32 @@
         </thead>
         <tbody class="divide-y divide-gray-700">
           {% for p in players %}
+            {% set row_class = "" %}
             {% if loop.index == 1 %}
-              {% set row_class = "bg-amber-400/30" %}
+              {% set row_class = "gold text-yellow-300 font-semibold" %}
             {% elif loop.index == 2 %}
-              {% set row_class = "bg-gray-500/20" %}
+              {% set row_class = "silver text-gray-200 font-semibold" %}
             {% elif loop.index == 3 %}
-              {% set row_class = "bg-amber-600/25" %}
-            {% else %}
-              {% set row_class = loop.index is even and "bg-gray-900" or "" %}
+              {% set row_class = "bronze text-orange-300 font-semibold" %}
+            {% elif loop.index is even %}
+              {% set row_class = "bg-gray-900" %}
             {% endif %}
-          <tr class="{{ row_class }}">
-            <td class="px-4 py-3">{{ loop.index }}</td>
-            <td class="px-4 py-3">{{ p.username }}</td>
-            <td class="px-4 py-3 text-right">{{ p.balance }}</td>
+          <tr class="{{ row_class }} hover:bg-gray-700/40 transition duration-200">
+            <td class="px-4 py-3 text-lg font-bold">{{ loop.index }}</td>
+            <td class="px-4 py-3 flex items-center justify-start space-x-3 text-left">
+              {% if p.avatar_path %}
+                <img src="{{ p.avatar_path }}" alt="avatar"
+                     class="w-8 h-8 rounded-full object-cover border border-gray-600">
+              {% else %}
+                <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm text-gray-300 font-bold">
+                  {{ p.username[0]|upper }}
+                </div>
+              {% endif %}
+              <a href="/player/{{ p.username }}" class="hover:underline {{ row_class }}">
+                {{ p.username }}
+              </a>
+            </td>
+            <td class="px-4 py-3 text-right">{{ p.balance }} NOK</td>
             <td class="px-4 py-3 text-right">{{ p.games_played }}</td>
             <td class="px-4 py-3 text-right">{{ p.total_rebuys }}</td>
           </tr>
@@ -61,6 +88,5 @@
       </table>
     </div>
   </section>
-
 </div>
 {% endblock %}

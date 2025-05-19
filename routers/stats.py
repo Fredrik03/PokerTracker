@@ -23,7 +23,6 @@ def leaderboard(request: Request, sort: str = "balance"):
     if not user:
         return RedirectResponse("/login",302)
 
-    # map the incoming ?sort= key to an actual SQL alias
     sort_map = {
         "balance":    "p.balance",
         "games":      "games_played",
@@ -36,11 +35,11 @@ def leaderboard(request: Request, sort: str = "balance"):
             SELECT
               p.username,
               p.balance,
-              COUNT(g.rowid)       AS games_played,
-              COALESCE(SUM(g.rebuys),0) AS total_rebuys
+              p.avatar_path,  -- ✅ Add this
+              COUNT(g.rowid) AS games_played,
+              COALESCE(SUM(g.rebuys), 0) AS total_rebuys
             FROM players p
-            LEFT JOIN games g
-              ON g.winner = p.username
+            LEFT JOIN games g ON g.winner = p.username
             GROUP BY p.username
             ORDER BY {sort_col} DESC
         """).fetchall()
@@ -53,6 +52,7 @@ def leaderboard(request: Request, sort: str = "balance"):
             "current_sort": sort
         }
     )
+
 
 
 @router.get("/progress", response_class=None)
@@ -99,6 +99,82 @@ def progress_data():
     ]
 
     return JSONResponse({"labels": dates, "datasets": datasets})
+@router.get("/player/{username}", response_class=HTMLResponse)
+def public_dashboard(username: str, request: Request):
+    with get_db() as db:
+        user_row = db.execute(
+            "SELECT username, balance, avatar_path FROM players WHERE username = ?",
+            (username,)
+        ).fetchone()
+        if not user_row:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Use game_players for total sessions (all participations)
+        total_games = db.execute(
+            "SELECT COUNT(*) FROM game_players WHERE username = ?",
+            (username,)
+        ).fetchone()[0] or 0
+
+        # Wins (amount > 0) from games table
+        win_count = db.execute(
+            "SELECT COUNT(*) FROM games WHERE winner = ? AND amount > 0",
+            (username,)
+        ).fetchone()[0] or 0
+
+        win_rate = round((win_count / total_games * 100), 1) if total_games else 0
+
+        net_sum = db.execute(
+            "SELECT COALESCE(SUM(amount), 0) FROM games WHERE winner = ?",
+            (username,)
+        ).fetchone()[0] or 0
+
+        avg_profit = round((net_sum / total_games), 1) if total_games else 0
+
+        rows = db.execute(
+            """
+            SELECT date, SUM(amount) AS daily_net
+            FROM games
+            WHERE winner = ?
+            GROUP BY date
+            ORDER BY date
+            """,
+            (username,)
+        ).fetchall()
+
+        dates = [r["date"] for r in rows]
+        cumulative = []
+        running = 0
+        for r in rows:
+            running += r["daily_net"]
+            cumulative.append(running)
+
+        recent = db.execute(
+            """
+            SELECT date, amount AS net
+            FROM games
+            WHERE winner = ?
+            ORDER BY date DESC
+            LIMIT 10
+            """,
+            (username,)
+        ).fetchall()
+
+    return templates.TemplateResponse(
+        "public_dashboard.html",
+        {
+            "request": request,
+            "username": user_row["username"],
+            "avatar_path": user_row["avatar_path"],
+            "balance": user_row["balance"],
+            "total_games": total_games,         # Pass this
+            "win_rate": win_rate,
+            "net_sum": net_sum,
+            "avg_profit": avg_profit,
+            "dates": dates,
+            "cumulative": cumulative,
+            "recent": recent,
+        }
+    )
 
 
 
