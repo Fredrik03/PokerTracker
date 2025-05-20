@@ -4,7 +4,7 @@ __pycache__/
 venv/
 .env
 poker.db
-data
+app
 
 # IDE / OS files
 .idea/
