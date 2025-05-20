@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from config import DATABASE_URL
 
@@ -7,51 +8,43 @@ def get_db():
     return conn
 
 def init_db():
-    with get_db() as db:
-        # Players table
-        db.execute("""
-        CREATE TABLE IF NOT EXISTS players (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            balance INTEGER DEFAULT 0,
-            is_admin INTEGER DEFAULT 0,
-            must_set_password INTEGER DEFAULT 0,
-            avatar_path TEXT
-        )""")
+    if not os.path.exists(DATABASE_URL):
+        os.makedirs(os.path.dirname(DATABASE_URL), exist_ok=True)
+        with get_db() as db:
+            # Players table
+            db.execute("""
+            CREATE TABLE IF NOT EXISTS players (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                balance INTEGER DEFAULT 0,
+                is_admin INTEGER DEFAULT 0,
+                must_set_password INTEGER DEFAULT 0,
+                avatar_path TEXT
+            )""")
 
-        # Ensure avatar_path exists (in case upgrading)
-        player_cols = [row[1] for row in db.execute("PRAGMA table_info(players)").fetchall()]
-        if "avatar_path" not in player_cols:
-            db.execute("ALTER TABLE players ADD COLUMN avatar_path TEXT")
+            # Games table
+            db.execute("""
+            CREATE TABLE IF NOT EXISTS games (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                winner TEXT NOT NULL,
+                amount INTEGER NOT NULL,
+                rebuys INTEGER NOT NULL DEFAULT 0
+            )""")
 
-        # Games table
-        db.execute("""
-        CREATE TABLE IF NOT EXISTS games (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            winner TEXT NOT NULL,
-            amount INTEGER NOT NULL,
-            rebuys INTEGER NOT NULL DEFAULT 0
-        )""")
+            # GamePlayers table
+            db.execute("""
+            CREATE TABLE IF NOT EXISTS game_players (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                game_id INTEGER NOT NULL,
+                username TEXT NOT NULL,
+                buyin INTEGER NOT NULL,
+                rebuys INTEGER NOT NULL,
+                cashout INTEGER NOT NULL,
+                net INTEGER NOT NULL,
+                FOREIGN KEY (game_id) REFERENCES games(id),
+                FOREIGN KEY (username) REFERENCES players(username)
+            )""")
 
-        # Ensure rebuys exists
-        game_cols = [row[1] for row in db.execute("PRAGMA table_info(games)").fetchall()]
-        if "rebuys" not in game_cols:
-            db.execute("ALTER TABLE games ADD COLUMN rebuys INTEGER NOT NULL DEFAULT 0")
-
-        # GamePlayers table
-        db.execute("""
-        CREATE TABLE IF NOT EXISTS game_players (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            game_id INTEGER NOT NULL,
-            username TEXT NOT NULL,
-            buyin INTEGER NOT NULL,
-            rebuys INTEGER NOT NULL,
-            cashout INTEGER NOT NULL,
-            net INTEGER NOT NULL,
-            FOREIGN KEY (game_id) REFERENCES games(id),
-            FOREIGN KEY (username) REFERENCES players(username)
-        )""")
-
-        db.commit()
+            db.commit()
