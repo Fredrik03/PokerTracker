@@ -87,7 +87,7 @@ app.add_middleware(InitialPasswordMiddleware)
 app.add_middleware(
     SessionMiddleware,
     secret_key=config.SESSION_SECRET,
-    https_only=True,
+    https_only=False,
     same_site="strict",
     session_cookie="session",
     max_age=14 * 24 * 3600
