@@ -21,6 +21,9 @@
   {% endif %}
 
   <form method="post" action="/register" class="space-y-5">
+    <!-- CSRF protection token -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
     <div>
       <label class="block mb-1 text-sm font-medium text-gray-300">Username</label>
       <input name="username" type="text" required

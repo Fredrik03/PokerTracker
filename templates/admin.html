@@ -1,59 +1,98 @@
 {% extends "base.html" %}
 {% block title %}Admin Panel{% endblock %}
-
 {% block content %}
 <style>
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .fade-in {
-    animation: fadeInUp 0.5s ease-out both;
-  }
+  .fade-in { animation: fadeInUp 0.5s ease-out both; }
 </style>
 
 <div class="fade-in space-y-12 max-w-4xl mx-auto mt-8">
+  {% if msg %}
+    <div class="bg-green-600 text-white px-4 py-3 rounded shadow-md">
+      {{ msg | escape }}
+    </div>
+  {% endif %}
+
+  {% if error %}
+    <div class="bg-red-600 text-white px-4 py-3 rounded shadow-md">
+      {{ error | escape }}
+    </div>
+  {% endif %}
 
   <!-- Create User -->
   <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
     <h2 class="text-xl font-semibold mb-4 text-white">Create New User</h2>
     <form method="post" action="/create-user" class="space-y-4">
+      <!-- CSRF protection token -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div>
         <label class="block text-sm text-gray-300 mb-1">Username</label>
-        <input name="username" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:ring focus:ring-blue-500" required>
+        <input name="username" pattern="[a-zA-Z0-9_-]{1,32}"
+               title="Letters, numbers, underscore and dash only. Max 32 characters."
+               class="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+               required maxlength="32">
       </div>
       <div class="flex items-center">
         <input type="checkbox" name="is_admin" value="1" id="adminChk" class="mr-2">
         <label for="adminChk" class="text-sm text-gray-300">Make admin</label>
       </div>
-      <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white font-medium transition">
+      <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white">
         Create User
       </button>
     </form>
   </section>
 
-  <!-- Delete Users -->
+  <!-- Manage Users -->
   <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
     <h2 class="text-xl font-semibold mb-4 text-white">Manage Users</h2>
     <div class="overflow-x-auto">
-      <table class="w-full text-left text-sm">
+      <table class="w-full text-sm text-left">
         <thead>
-          <tr class="border-b border-gray-600 text-gray-400 uppercase text-xs tracking-wider">
+          <tr class="border-b border-gray-600 text-gray-400 uppercase text-xs">
             <th class="px-3 py-2">User</th>
             <th class="px-3 py-2">Admin?</th>
-            <th class="px-3 py-2">Action</th>
+            <th class="px-3 py-2">Balance</th>
+            <th class="px-3 py-2">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-700">
           {% for p in players %}
           <tr>
-            <td class="px-3 py-2">{{ p.username }}</td>
+            <td class="px-3 py-2">{{ p.username | escape }}</td>
             <td class="px-3 py-2">{{ '✅' if p.is_admin else '—' }}</td>
             <td class="px-3 py-2">
+              <form method="post" action="/set-balance" class="flex items-center space-x-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="username" value="{{ p.username | escape }}">
+                <input name="balance" type="number" value="{{ p.balance }}"
+                       min="-1000000" max="1000000"
+                       class="w-20 p-1 bg-gray-700 border border-gray-600 rounded text-right text-sm">
+                <button class="bg-indigo-600 px-2 py-1 rounded text-white text-sm">Set</button>
+              </form>
+            </td>
+            <td class="px-3 py-2 space-x-2">
+              <form method="post" action="/toggle-admin" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="username" value="{{ p.username | escape }}">
+                <button class="text-blue-400 hover:text-blue-300 text-sm">
+                  {{ 'Demote' if p.is_admin else 'Promote' }}
+                </button>
+              </form>
+
+              <form method="post" action="/reset-password" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="username" value="{{ p.username | escape }}">
+                <button class="text-yellow-400 hover:text-yellow-300 text-sm">Reset PW</button>
+              </form>
+
               {% if p.username != request.session.get('user') %}
-              <form method="post" action="/delete-user" class="inline">
-                <input type="hidden" name="username" value="{{ p.username }}">
-                <button type="submit" class="text-red-400 hover:text-red-300 text-sm">Delete</button>
+              <form method="post" action="/delete-user" class="inline" onsubmit="return confirm('Really delete user {{ p.username | escape }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="username" value="{{ p.username | escape }}">
+                <button class="text-red-400 hover:text-red-300 text-sm">Delete</button>
               </form>
               {% endif %}
             </td>
@@ -68,38 +107,81 @@
   <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
     <h2 class="text-xl font-semibold mb-4 text-white">Add New Game</h2>
     <form method="post" action="/add-game" class="space-y-6">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm text-gray-300 mb-1">Date</label>
-          <input type="date" name="date" class="w-full p-2 bg-gray-700 border border-gray-600 rounded" required>
+          <input type="date" name="date" max="{{ today }}"
+                 class="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                 required>
         </div>
         <div>
           <label class="block text-sm text-gray-300 mb-1">Buy-in</label>
-          <input type="number" name="buyin" value="{{ buyin }}" class="w-full p-2 bg-gray-700 border border-gray-600 rounded" required>
+          <input type="number" name="buyin" value="{{ buyin }}" min="1"
+                 class="w-full p-2 bg-gray-700 border border-gray-600 rounded"
+                 required>
         </div>
       </div>
 
-      <p class="text-sm text-gray-300">Select players and enter their cash-out and re-buy info:</p>
-
-      <!-- Player rows -->
       <div class="space-y-2 max-h-64 overflow-y-auto">
         {% for p in all_players %}
         <div class="flex items-center space-x-2">
-          <input type="checkbox" name="play_{{ p.username }}" id="play_{{ p.username }}" class="w-5 h-5">
-          <label for="play_{{ p.username }}" class="flex-1 text-white">{{ p.username }}</label>
-          <input type="number" name="amount_{{ p.username }}" value="0" placeholder="0"
-                 class="w-20 p-1 bg-gray-700 border border-gray-600 rounded text-right" title="Cash-out amount">
-          <input type="number" name="rebuys_{{ p.username }}" value="0" min="0" placeholder="0"
-                 class="w-16 p-1 bg-gray-700 border border-gray-600 rounded text-right" title="Number of re-buys">
+          <input type="checkbox" name="play_{{ p.username | escape }}"
+                 id="play_{{ p.username | escape }}"
+                 class="w-5 h-5">
+          <label for="play_{{ p.username | escape }}" class="flex-1 text-white">
+            {{ p.username | escape }}
+          </label>
+          <input type="number" name="amount_{{ p.username | escape }}" value="0" min="0"
+                 class="w-20 p-1 bg-gray-700 border border-gray-600 rounded text-right"
+                 title="Cash-out amount">
+          <input type="number" name="rebuys_{{ p.username | escape }}" value="0" min="0"
+                 class="w-16 p-1 bg-gray-700 border border-gray-600 rounded text-right"
+                 title="Number of re-buys">
         </div>
         {% endfor %}
       </div>
 
-      <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded text-white font-medium transition">
+      <button type="submit"
+              class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded text-white font-medium">
         Add Game
       </button>
     </form>
   </section>
 
+  <!-- Audit Log -->
+  <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+    <h2 class="text-xl font-semibold mb-4 text-white">Audit Log</h2>
+    <div class="overflow-y-auto max-h-64">
+      <table class="w-full text-sm text-left">
+        <thead>
+          <tr class="border-b border-gray-600 text-gray-400 uppercase text-xs">
+            <th class="px-3 py-2">Time</th>
+            <th class="px-3 py-2">Admin</th>
+            <th class="px-3 py-2">Action</th>
+            <th class="px-3 py-2">Target</th>
+            <th class="px-3 py-2">IP</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+          {% for log in logs %}
+          <tr>
+            <td class="px-3 py-2">{{ log.timestamp | escape }}</td>
+            <td class="px-3 py-2">{{ log.actor | escape }}</td>
+            <td class="px-3 py-2">{{ log.action | escape }}</td>
+            <td class="px-3 py-2">{{ log.target | escape or '—' }}</td>
+            <td class="px-3 py-2">{{ log.ip_address | escape or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="px-3 py-2 text-center text-gray-400">
+              No recent actions.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>
 {% endblock %}

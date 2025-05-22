@@ -14,6 +14,14 @@
 
 <div class="fade-in bg-gray-800/80 backdrop-blur-sm p-6 sm:p-8 rounded-xl shadow-xl space-y-8 max-w-md mx-auto mt-20">
 
+  <!-- Flash messages -->
+  {% if msg %}
+    <p class="text-green-400 text-center">{{ msg | escape }}</p>
+  {% endif %}
+  {% if error %}
+    <p class="text-red-400 text-center">{{ error | escape }}</p>
+  {% endif %}
+
   <div class="flex flex-col items-center space-y-4">
     {% if avatar_path %}
       <img src="{{ avatar_path }}" alt="Avatar"
@@ -23,12 +31,13 @@
         {{ username[0] | upper }}
       </div>
     {% endif %}
-    <h2 class="text-2xl font-semibold text-white">{{ username }}</h2>
+    <h2 class="text-2xl font-semibold text-white">{{ username | escape }}</h2>
     <p class="text-sm text-gray-400">{{ balance }} NOK • Admin: {{ 'Yes' if is_admin else 'No' }}</p>
   </div>
 
   <!-- Avatar update form -->
   <form method="post" action="/profile/avatar" class="space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label class="block text-sm text-gray-300">Avatar Image URL</label>
     <input name="avatar_path" type="url" placeholder="https://example.com/avatar.jpg"
            class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white placeholder-gray-400 focus:ring focus:ring-blue-500" />
@@ -38,30 +47,27 @@
     </button>
   </form>
 
-  {% if msg %}
-    <p class="text-green-400 text-center">{{ msg }}</p>
-  {% endif %}
-  {% if error %}
-    <p class="text-red-400 text-center">{{ error }}</p>
-  {% endif %}
-
   <hr class="border-gray-700">
 
+  <!-- Change password form -->
   <h3 class="text-xl font-semibold text-white">Change Password</h3>
-
   <form method="post" action="/profile/change-password" class="space-y-5">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div>
       <label class="block mb-1 text-sm text-gray-300">Old Password</label>
       <input name="old_password" type="password" required
              class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white placeholder-gray-400 focus:ring focus:ring-blue-500"/>
     </div>
-
     <div>
       <label class="block mb-1 text-sm text-gray-300">New Password</label>
       <input name="new_password" type="password" required
              class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white placeholder-gray-400 focus:ring focus:ring-blue-500"/>
     </div>
-
+    <div>
+      <label class="block mb-1 text-sm text-gray-300">Confirm Password</label>
+      <input name="confirm" type="password" required
+             class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white placeholder-gray-400 focus:ring focus:ring-blue-500"/>
+    </div>
     <button type="submit"
             class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 font-semibold transition duration-200 shadow hover:shadow-lg transform hover:-translate-y-0.5">
       Update Password

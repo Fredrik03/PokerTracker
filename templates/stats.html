@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Stats{% endblock %}
+
+{% block content %}
+<style>
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in {
+    animation: fadeInUp 0.5s ease-out both;
+  }
+
+  .gold   { background-color: rgba(255, 215, 0, 0.12); }
+  .silver { background-color: rgba(192,192,192, 0.12); }
+  .bronze { background-color: rgba(205, 127, 50, 0.12); }
+</style>
+
+<div class="fade-in space-y-12 max-w-5xl mx-auto mt-8">
+  <!-- Toggle Buttons -->
+  <div class="flex justify-center mb-8">
+    <button id="monthlyBtn" class="bg-blue-600 text-white px-4 py-2 rounded-l hover:bg-blue-700 transition-colors duration-200">Monthly</button>
+    <button id="globalBtn" class="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700 transition-colors duration-200">All-Time</button>
+  </div>
+
+  <!-- Monthly Stats -->
+  <div id="monthlyStats">
+    <h1 class="text-4xl font-bold text-center text-white tracking-tight">📆 Monthly Stats</h1>
+    <div class="space-y-12 mt-6">
+      {% if m.is_final_week %}
+        <div class="relative bg-gray-800 p-6 rounded-lg shadow-xl text-center overflow-hidden min-h-[180px]">
+          {% if m.player_of_month and m.player_of_month != "N/A" %}
+            <canvas id="confettiCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+          {% endif %}
+          <h2 class="text-xl font-semibold text-yellow-400 mb-2 relative z-10">Player of the Month 🏆</h2>
+          {% if m.player_of_month_avatar %}
+            <img src="{{ m.player_of_month_avatar }}" class="w-16 h-16 mx-auto rounded-full border border-gray-600 mb-2 relative z-10">
+          {% else %}
+            <div class="w-16 h-16 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2 relative z-10">
+              {{ m.player_of_month[0]|upper if m.player_of_month != "N/A" else "?" }}
+            </div>
+          {% endif %}
+          <p class="text-white text-2xl font-bold relative z-10">{{ m.player_of_month or 'N/A' }}</p>
+        </div>
+      {% else %}
+        <p class="text-gray-300 text-center">Only <span class="font-semibold text-white">{{ m.days_left }}</span> days left until the final Player of the Month!</p>
+        <div class="flex justify-center items-end space-x-6 mb-8">
+          {% set second = m.top_three[1] if m.top_three|length > 1 else None %}
+          {% set first  = m.top_three[0] %}
+          {% set third  = m.top_three[2] if m.top_three|length > 2 else None %}
+
+          {% if second %}
+            <div class="silver w-40 h-48 rounded-t-lg shadow-lg flex flex-col justify-end items-center p-4">
+              {% if second.avatar %}
+                <img src="{{ second.avatar }}" class="w-14 h-14 rounded-full border border-gray-600 mb-2">
+              {% else %}
+                <div class="w-14 h-14 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ second.username[0]|upper }}</div>
+              {% endif %}
+              <h4 class="text-gray-200 font-semibold">{{ second.username }}</h4>
+              <p class="text-green-400 text-lg">{{ second.net }} NOK</p>
+              <span class="text-gray-400 text-xs uppercase mt-1">2nd</span>
+            </div>
+          {% endif %}
+
+          {% if first %}
+            <div class="gold w-48 h-64 rounded-t-lg shadow-2xl flex flex-col justify-end items-center p-4">
+              {% if first.avatar %}
+                <img src="{{ first.avatar }}" class="w-16 h-16 rounded-full border border-gray-600 mb-2">
+              {% else %}
+                <div class="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ first.username[0]|upper }}</div>
+              {% endif %}
+              <h3 class="text-yellow-300 font-semibold text-lg">{{ first.username }}</h3>
+              <p class="text-green-400 text-xl">{{ first.net }} NOK</p>
+              <span class="text-gray-400 text-sm uppercase mt-1">1st</span>
+            </div>
+          {% endif %}
+
+          {% if third %}
+            <div class="bronze w-36 h-40 rounded-t-lg shadow-lg flex flex-col justify-end items-center p-4">
+              {% if third.avatar %}
+                <img src="{{ third.avatar }}" class="w-12 h-12 rounded-full border border-gray-600 mb-2">
+              {% else %}
+                <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ third.username[0]|upper }}</div>
+              {% endif %}
+              <h5 class="text-orange-300 font-semibold">{{ third.username }}</h5>
+              <p class="text-green-400">{{ third.net }} NOK</p>
+              <span class="text-gray-400 text-xs uppercase mt-1">3rd</span>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <!-- Biggest Win / Worst Loss -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {% for label, value, avatar in [("Biggest Win", m.biggest_win, m.biggest_winner_avatar),("Worst Loss", m.worst_loss, m.worst_loser_avatar)] %}
+          <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <h3 class="text-sm text-gray-400 mb-2">{{ label }}</h3>
+            {% if avatar %}
+              <img src="{{ avatar }}" class="w-12 h-12 mx-auto rounded-full border border-gray-600 mb-2">
+            {% else %}
+              <div class="w-12 h-12 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-lg mb-2">{{ "?" }}</div>
+            {% endif %}
+            <p class="{{ 'text-green-400' if label=='Biggest Win' else 'text-red-400' }} text-2xl font-bold">{{ value }} NOK</p>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Other Stat Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for title,user,avatar,val,color in [
+          ("Top Earner", m.top_earner, m.top_earner_avatar, m.top_earner_amount ~ " NOK", "text-green-400"),
+          ("Top Loser", m.top_loser, m.top_loser_avatar, m.top_loser_amount ~ " NOK", "text-red-400"),
+          ("Most Re-buys", m.top_rebuyer, m.top_rebuyer_avatar, m.total_rebuys ~ " re-buys", "text-yellow-400"),
+          ("Best ROI", m.roi_user, m.roi_user_avatar, m.best_roi ~ " %", "text-purple-400"),
+          ("Most Consistent", m.most_consistent_user, m.most_consistent_avatar, "±" ~ m.consistent_user_avg ~ " NOK", "text-blue-400"),
+          ("Most Comebacks", m.comeback_user, m.comeback_avatar, "+" ~ m.comeback_net ~ " NOK", "text-cyan-400")
+        ] %}
+          <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <h3 class="text-sm text-gray-400 mb-2">{{ title }}</h3>
+            {% if avatar %}
+              <img src="{{ avatar }}" class="w-14 h-14 mx-auto rounded-full border border-gray-600 mb-2">
+            {% else %}
+              <div class="w-14 h-14 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ user[0]|upper if user!='N/A' else '?' }}</div>
+            {% endif %}
+            <p class="{{ color }} text-xl font-bold">{{ val }}</p>
+            <p class="text-sm text-gray-400">{{ user }}</p>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Top 5 Monthly Earners Table -->
+      <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold mb-4 text-white">Top 5 Monthly Earners</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full table-auto text-sm"><thead><tr class="text-gray-400 uppercase text-xs border-b border-gray-600"><th class="px-4 py-2">Player</th><th class="px-4 py-2 text-right">Net</th></tr></thead><tbody class="divide-y divide-gray-700">
+            {% for p in m.top_monthly_earners %}
+              <tr><td class="px-4 py-2 font-medium">{{ p.username }}</td><td class="px-4 py-2 text-right text-green-400 font-semibold">{{ p.net }} NOK</td></tr>
+            {% else %}<tr><td colspan="2" class="px-4 py-2 text-center text-gray-400">No data.</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Global Stats -->
+  <div id="globalStats" style="display:none">
+    <h1 class="text-4xl font-bold text-center text-white tracking-tight">🌍 All-Time Stats</h1>
+    <div class="space-y-12 mt-6">
+      <!-- Biggest Win / Worst Loss -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {% for label,value,avatar in [("Biggest Win",g.biggest_win,g.biggest_winner_avatar),("Worst Loss",g.worst_loss,g.worst_loser_avatar)] %}
+          <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <h3 class="text-sm text-gray-400 mb-2">{{ label }}</h3>
+            {% if avatar %}
+              <img src="{{ avatar }}" class="w-12 h-12 mx-auto rounded-full border border-gray-600 mb-2">
+            {% else %}
+              <div class="w-12 h-12 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-lg mb-2">{{ "?" }}</div>
+            {% endif %}
+            <p class="{{ 'text-green-400' if label=='Biggest Win' else 'text-red-400' }} text-2xl font-bold">{{ value }} NOK</p>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for title,user,avatar,val,color in [
+          ("Top Earner",g.top_earner,g.top_earner_avatar,g.top_earner_amount~" NOK","text-green-400"),
+          ("Top Loser",g.top_loser,g.top_loser_avatar,g.top_loser_amount~" NOK","text-red-400"),
+          ("Most Re-buys",g.top_rebuyer,g.top_rebuyer_avatar,g.total_rebuys~" re-buys","text-yellow-400"),
+          ("Best ROI",g.roi_user,g.roi_user_avatar,g.best_roi~" %","text-purple-400"),
+          ("Most Consistent",g.most_consistent_user,g.most_consistent_avatar,"±"~g.consistent_user_avg~" NOK","text-blue-400"),
+          ("Most Comebacks",g.comeback_user,g.comeback_avatar,"+"~g.comeback_net~" NOK","text-cyan-400")
+        ] %}
+          <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <h3 class="text-sm text-gray-400 mb-2">{{ title }}</h3>
+            {% if avatar %}
+              <img src="{{ avatar }}" class="w-14 h-14 mx-auto rounded-full border border-gray-600 mb-2">
+            {% else %}
+              <div class="w-14 h-14 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ user[0]|upper if user!='N/A' else '?' }}</div>
+            {% endif %}
+            <p class="{{ color }} text-xl font-bold">{{ val }}</p>
+            <p class="text-sm text-gray-400">{{ user }}</p>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Top 5 Global Earners -->
+      <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold mb-4 text-white">Top 5 All-Time Earners</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full table-auto text-sm"><thead><tr class="text-gray-400 uppercase text-xs border-b border-gray-600"><th class="px-4 py-2">Player</th><th class="px-4 py-2 text-right">Net</th></tr></thead><tbody class="divide-y divide-gray-700">
+            {% for p in g.top_global_earners %}
+              <tr><td class="px-4 py-2 font-medium">{{ p.username }}</td><td class="px-4 py-2 text-right text-green-400 font-semibold">{{ p.net }} NOK</td></tr>
+            {% else %}<tr><td colspan="2" class="px-4 py-2 text-center text-gray-400">No data.</td></tr>{% endfor %}
+          </tbody></table>
+        </div>
+      </section>
+
+      <!-- Player of the Month History -->
+      <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold mb-4 text-white">Player of the Month History</h2>
+        <table class="w-full table-auto text-sm"><thead><tr class="text-gray-400 uppercase text-xs border-b border-gray-600"><th class="px-4 py-2">Month</th><th class="px-4 py-2">Player</th><th class="px-4 py-2">Avatar</th></tr></thead><tbody class="divide-y divide-gray-700">
+          {% for row in g.potm_history %}
+            <tr>
+              <td class="px-4 py-2">{{ row.month }}</td>
+              <td class="px-4 py-2">{{ row.username }}</td>
+              <td class="px-4 py-2">
+                {% if row.avatar_path %}
+                  <img src="{{ row.avatar_path }}" class="w-8 h-8 rounded-full border border-gray-600">
+                {% else %}
+                  <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white text-sm font-bold">{{ row.username[0]|upper }}</div>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="px-4 py-2 text-center text-gray-400">No data.</td></tr>
+          {% endfor %}
+        </tbody></table>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+  const monthlyBtn = document.getElementById('monthlyBtn');
+  const globalBtn = document.getElementById('globalBtn');
+  const mSec = document.getElementById('monthlyStats');
+  const gSec = document.getElementById('globalStats');
+
+  function updateButtonStates(activeBtn, inactiveBtn) {
+    activeBtn.classList.add('bg-blue-600');
+    activeBtn.classList.remove('bg-gray-700');
+    inactiveBtn.classList.add('bg-gray-700');
+    inactiveBtn.classList.remove('bg-blue-600');
+  }
+
+  monthlyBtn.addEventListener('click', () => {
+    mSec.style.opacity = '0';
+    gSec.style.opacity = '0';
+    setTimeout(() => {
+      mSec.style.display = 'block';
+      gSec.style.display = 'none';
+      setTimeout(() => {
+        mSec.style.opacity = '1';
+      }, 50);
+    }, 200);
+    updateButtonStates(monthlyBtn, globalBtn);
+  });
+
+  globalBtn.addEventListener('click', () => {
+    mSec.style.opacity = '0';
+    gSec.style.opacity = '0';
+    setTimeout(() => {
+      mSec.style.display = 'none';
+      gSec.style.display = 'block';
+      setTimeout(() => {
+        gSec.style.opacity = '1';
+      }, 50);
+    }, 200);
+    updateButtonStates(globalBtn, monthlyBtn);
+  });
+
+  // Initialiser siden
+  document.addEventListener('DOMContentLoaded', () => {
+    // Legg til transition styles
+    mSec.style.transition = 'opacity 0.2s ease-in-out';
+    gSec.style.transition = 'opacity 0.2s ease-in-out';
+    monthlyBtn.click();
+  });
+</script>
+{% endblock %}

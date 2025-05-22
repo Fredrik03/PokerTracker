@@ -7,44 +7,53 @@
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-
   .fade-in {
     animation: fadeIn 0.5s ease-out both;
+  }
+  .clickable-row {
+    cursor: pointer;
   }
 </style>
 
 <div class="fade-in space-y-8 max-w-5xl mx-auto mt-8">
-
   <h1 class="text-4xl font-bold text-center text-white">Game History</h1>
 
-  <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+  <section class="bg-gray-800/80 backdrop-blur-sm p-8 rounded-xl shadow-xl">
     <div class="overflow-x-auto">
-      <table class="w-full table-auto text-sm text-left">
+      <table class="w-full table-auto text-sm">
         <thead>
           <tr class="text-gray-400 uppercase text-xs tracking-wider border-b border-gray-600">
-            <th class="px-4 py-3">Date</th>
-            <th class="px-4 py-3">Winner</th>
+            <th class="px-4 py-3 text-left">Date</th>
+            <th class="px-4 py-3 text-left">Winner</th>
             <th class="px-4 py-3 text-right">Amount</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-700">
           {% for game in games %}
-          <tr class="{{ loop.index is even and 'bg-gray-900' or '' }}">
-            <td class="px-4 py-3">{{ game.date }}</td>
+          {% set detail_url = url_for('history_detail', game_id=game.id) %}
+          <tr
+            class="clickable-row hover:bg-gray-700/40 transition duration-200 {{ loop.index is even and 'bg-gray-900' or '' }}"
+            onclick="window.location='{{ detail_url }}'"
+          >
+            <td class="px-4 py-3">
+              {{ game.date }}
+            </td>
             <td class="px-4 py-3">{{ game.winner }}</td>
-            <td class="px-4 py-3 text-right font-semibold {{ 'text-green-400' if game.amount >= 0 else 'text-red-400' }}">
+            <td class="px-4 py-3 text-right font-semibold
+                       {{ 'text-green-400' if game.amount >= 0 else 'text-red-400' }}">
               {{ game.amount }} NOK
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="3" class="px-4 py-4 text-center text-gray-400">No games found.</td>
+            <td colspan="3" class="px-4 py-4 text-center text-gray-400">
+              No games found.
+            </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </section>
-
 </div>
 {% endblock %}

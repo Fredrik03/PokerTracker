@@ -1,0 +1,133 @@
+
+{% extends "base.html" %}
+{% block title %}Global Stats{% endblock %}
+
+{% block content %}
+<style>
+  @keyframes fadeInUp {
+    from   { opacity: 0; transform: translateY(16px); }
+    to     { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in {
+    animation: fadeInUp 0.5s ease-out both;
+  }
+</style>
+
+<div class="fade-in space-y-12 max-w-5xl mx-auto mt-8">
+  <h1 class="text-4xl font-bold text-center text-white tracking-tight">🌍 Global Stats</h1>
+
+  <!-- Biggest Win / Worst Loss -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    {% for label, value, avatar in [
+      ("Biggest Win", biggest_win or 0, biggest_win_avatar),
+      ("Worst Loss",  worst_loss  or 0, worst_loss_avatar)
+    ] %}
+      {% set user = (biggest_winner if label=="Biggest Win" else worst_loser) %}
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+        <h3 class="text-sm text-gray-400 mb-2">{{ label }}</h3>
+        {% if avatar %}
+          <img src="{{ avatar }}" class="w-12 h-12 mx-auto rounded-full border border-gray-600 mb-2">
+        {% else %}
+          <div class="w-12 h-12 mx-auto rounded-full bg-gray-700 flex items-center justify-center
+                      text-white font-bold text-lg mb-2">
+            {{ "?" if not user or user=="N/A" else user[0]|upper }}
+          </div>
+        {% endif %}
+        <p class="{{ 'text-green-400' if label=='Biggest Win' else 'text-red-400' }} text-2xl font-bold">
+          {{ value }} NOK
+        </p>
+        <p class="text-sm text-gray-400 mt-1">{{ user or 'N/A' }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% set stat_cards = [
+      ("Top Earner",       top_earner,        top_earner_avatar,       top_earner_amount ~ " NOK",   "text-green-400"),
+      ("Top Loser",        top_loser,         top_loser_avatar,        top_loser_amount  ~ " NOK",   "text-red-400"),
+      ("Most Re-buys",     top_rebuyer if total_rebuys>0 else None,
+                           top_rebuyer_avatar if total_rebuys>0 else None,
+                           total_rebuys ~ " re-buys" if total_rebuys>0 else "No re-buys", "text-yellow-400"),
+      ("Best ROI",         roi_user,          roi_user_avatar,         best_roi         ~ "%",       "text-purple-400"),
+      ("Most Consistent",  most_consistent_user, most_consistent_avatar, "±" ~ consistent_user_avg ~ " NOK", "text-blue-400"),
+      ("Most Comebacks",   comeback_user,     comeback_avatar,         "+" ~ comeback_net ~ " NOK",   "text-cyan-400")
+    ] %}
+    {% for title, user, avatar, value, color in stat_cards %}
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+        <h3 class="text-sm text-gray-400 mb-2">{{ title }}</h3>
+        {% if avatar %}
+          <img src="{{ avatar }}" class="w-14 h-14 mx-auto rounded-full border border-gray-600 mb-2">
+        {% else %}
+          <div class="w-14 h-14 mx-auto rounded-full bg-gray-700 flex items-center justify-center
+                      text-white font-bold text-xl mb-2">
+            {{ "?" if not user or user=="N/A" else user[0]|upper }}
+          </div>
+        {% endif %}
+        <p class="{{ color }} text-xl font-bold">{{ value }}</p>
+        <p class="text-sm text-gray-400">{{ user or "N/A" }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Top 5 Global Earners -->
+  <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+    <h2 class="text-xl font-semibold mb-4 text-white">Top 5 All-Time Earners</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full table-auto text-sm">
+        <thead>
+          <tr class="text-gray-400 border-b border-gray-600 uppercase text-xs">
+            <th class="px-4 py-3">Player</th>
+            <th class="px-4 py-3 text-right">Net Profit</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+          {% for p in top_global_earners %}
+            <tr class="{{ loop.index is even and 'bg-gray-900' or '' }}">
+              <td class="px-4 py-3 font-medium">{{ p.username }}</td>
+              <td class="px-4 py-3 text-right text-green-400 font-semibold">{{ p.net }} NOK</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="2" class="px-4 py-4 text-center text-gray-400">No data available.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Historical Player of the Month Table -->
+  <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+    <h2 class="text-xl font-semibold mb-4 text-white">Player of the Month History</h2>
+    <table class="w-full table-auto text-sm">
+      <thead>
+        <tr class="text-gray-400 border-b border-gray-600 uppercase text-xs">
+          <th class="px-4 py-2 text-left">Month</th>
+          <th class="px-4 py-2 text-left">Player</th>
+          <th class="px-4 py-2 text-left">Avatar</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for row in potm_history %}
+          <tr>
+            <td class="px-4 py-2">{{ row.month }}</td>
+            <td class="px-4 py-2">{{ row.username }}</td>
+            <td class="px-4 py-2">
+              {% if row.avatar_path %}
+                <img src="{{ row.avatar_path }}" class="w-8 h-8 rounded-full border border-gray-600">
+              {% else %}
+                <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white text-sm">
+                  {{ row.username[0]|upper }}
+                </div>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="px-4 py-4 text-center text-gray-400">No data available.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

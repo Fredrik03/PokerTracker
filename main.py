@@ -1,63 +1,64 @@
-# main.py
-
-from fastapi import FastAPI, Request
+import config
+import db
+from pathlib import Path
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from passlib.context import CryptContext
-
-# ✅ Import your shared limiter from rate_limit.py
-from rate_limit import limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from passlib.context import CryptContext
 
-import config, db
-from deps import get_current_user
-from routers import auth, stats, dashboard, games, admin, profile, history, global_stats, monthly_stats
-
-# 1) initialize DB
+# Initialize database
 db.init_db()
-app = FastAPI()
 
-# ✅ 1a) attach limiter to app
-app.state.limiter = limiter
-
-# ✅ 1b) global exception handler for rate-limiting
-@app.exception_handler(RateLimitExceeded)
-def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    return JSONResponse(
-        status_code=429,
-        content={"error": "Too many requests. Please try again later."}
-    )
-
-# password hasher for bootstrap
+# Password hasher for bootstrap
 pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# 2) bootstrap admin on startup
+app = FastAPI()
+import db
+db.init_db()
+
+# Password hasher for bootstrap
+pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+app = FastAPI()
+# Mount static files (absolute path)
+BASE_DIR = Path(__file__).resolve().parent
+app.mount(
+    "/static",
+    StaticFiles(directory=BASE_DIR / "static"),
+    name="static"
+)
+
+# Rate limiter
+from rate_limit import limiter
+app.state.limiter = limiter
+@app.exception_handler(RateLimitExceeded)
+def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(status_code=429, content={"error": "Too many requests."})
+
+# Bootstrap the admin account on startup
 @app.on_event("startup")
 def bootstrap_admin():
     from db import get_db
     username = config.ADMIN_USERNAME
-
     with get_db() as conn:
         exists = conn.execute(
             "SELECT 1 FROM players WHERE username = ?", (username,)
         ).fetchone()
         if not exists:
+            # Create account requiring password set on first login
             conn.execute(
-                """
-                INSERT INTO players
-                  (username, password, is_admin, must_set_password)
-                VALUES (?, ?, 1, 1)
-                """,
+                "INSERT INTO players (username, password, is_admin, must_set_password) VALUES (?, ?, 1, 1)",
                 (username, "")
             )
             conn.commit()
-            print(f"[startup] bootstrapped admin account '{username}', will require setting password on first login")
+            print(f"[startup] Bootstrapped admin account '{username}', requires password set.")
 
-# 3) "must-set-password" guard
+# Middleware
 class InitialPasswordMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if (
@@ -65,42 +66,53 @@ class InitialPasswordMiddleware(BaseHTTPMiddleware):
             request.session.get("must_set_password") and
             not request.url.path.startswith(("/login", "/set-password", "/static", "/logout"))
         ):
-            return RedirectResponse("/set-password", status_code=302)
+            return RedirectResponse("/set-password", 302)
         return await call_next(request)
 
-# 4) NoCacheMiddleware to prevent caching on protected routes
 class NoCacheMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        protected_paths = [
-            "/dashboard",
-            "/profile",
-            "/leaderboard",
-            "/player/",        # trailing slash to catch subpaths like /player/username
-            "/monthly-stats",
-            "/global-stats",
-            "/history",
-            "/admin",
-        ]
-        if any(request.url.path.startswith(path) for path in protected_paths):
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
-            response.headers["Pragma"] = "no-cache"
-            response.headers["Expires"] = "0"
-            response.headers["Surrogate-Control"] = "no-store"
+        protected = ["/dashboard","/profile","/leaderboard","/player/","/monthly-stats","/global-stats","/history","/admin"]
+        if any(request.url.path.startswith(p) for p in protected):
+            response.headers.update({
+                "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+                "Surrogate-Control": "no-store"
+            })
         return response
 
-
-# ✅ Middleware registration
+# Register middleware
 app.add_middleware(InitialPasswordMiddleware)
-app.add_middleware(SessionMiddleware, secret_key=config.SESSION_SECRET)
-app.add_middleware(SlowAPIMiddleware)  # Enables limiter to track requests
-app.add_middleware(NoCacheMiddleware)  # Add the no-cache middleware last
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=config.SESSION_SECRET,
+    https_only=True,
+    same_site="strict",
+    session_cookie="session",
+    max_age=14 * 24 * 3600
+)
+app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(NoCacheMiddleware)
+from security import SecurityHeadersMiddleware
+app.add_middleware(SecurityHeadersMiddleware)
 
-# 5) templating & static
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Templates
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-# 6) routers
+# Include routers
+import routers.auth as auth
+import routers.stats as stats
+import routers.dashboard as dashboard
+import routers.games as games
+import routers.admin as admin
+import routers.profile as profile
+import routers.history as history
+import routers.global_stats as global_stats
+import routers.monthly_stats as monthly_stats
+import routers.leaderboard as leaderboard
+import routers.public_profile as public_profile
+
 app.include_router(auth.router)
 app.include_router(stats.router)
 app.include_router(dashboard.router)
@@ -110,8 +122,12 @@ app.include_router(profile.router)
 app.include_router(history.router)
 app.include_router(global_stats.router)
 app.include_router(monthly_stats.router)
+app.include_router(leaderboard.router)
+app.include_router(public_profile.router)
 
-# 7) dashboard (and root)
-@app.get("/", response_class=HTMLResponse)
-async def root():
+# Root redirect with CSRF generation
+from deps import generate_csrf
+@app.get("/", response_class=HTMLResponse, dependencies=[Depends(generate_csrf)])
+async def root(request: Request):
+    _ = request.session.get("csrf_token")
     return RedirectResponse("/dashboard")

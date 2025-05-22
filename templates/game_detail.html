@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Game Details{% endblock %}
+
+{% block content %}
+<style>
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in {
+    animation: fadeIn 0.5s ease-out both;
+  }
+</style>
+
+<div class="fade-in max-w-5xl mx-auto mt-10 space-y-10 text-white">
+
+  <h1 class="text-3xl font-bold text-center">Game on {{ game.date }}</h1>
+
+  <p class="text-center text-gray-400 text-sm mb-2">
+    Buy-in: <span class="font-semibold text-white">{{ game.buyin }} NOK</span>
+  </p>
+
+  <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
+    <table class="w-full table-auto text-sm">
+      <thead>
+        <tr class="text-gray-400 uppercase text-xs tracking-wider border-b border-gray-600">
+          <th class="px-4 py-3 text-left">Player</th>
+          <th class="px-4 py-3 text-right">Rebuys</th>
+          <th class="px-4 py-3 text-right">Profit/Loss</th>
+          {% if is_admin %}
+            <th class="px-4 py-3 text-right">Edit</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for player in players %}
+          <tr>
+            <td class="px-4 py-3 flex items-center gap-3">
+              {% if player.avatar_path %}
+                <img src="{{ player.avatar_path }}"
+                     class="w-8 h-8 rounded-full object-cover border border-gray-600" />
+              {% else %}
+                <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-sm font-bold">
+                  {{ player.username[0] | upper }}
+                </div>
+              {% endif %}
+              <!-- LINK TO PUBLIC PROFILE -->
+              <a href="{{ url_for('public_profile', username=player.username) }}"
+                 class="text-blue-400 hover:underline">
+                {{ player.username }}
+              </a>
+            </td>
+
+            <td class="px-4 py-3 text-right">{{ player.rebuys }}</td>
+
+            <td class="px-4 py-3 text-right font-semibold
+                       {{ 'text-green-400' if player.net >= 0 else 'text-red-400' }}">
+              {{ player.net }} NOK
+            </td>
+
+            {% if is_admin %}
+              <td class="px-4 py-3">
+                <form action="{{ url_for('admin_update_amount') }}"
+                      method="post"
+                      class="text-xs">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="hidden" name="game_id"   value="{{ game.id }}">
+                  <input type="hidden" name="username"  value="{{ player.username }}">
+
+                  <div class="flex flex-col items-center space-y-2">
+                    <div class="w-24">
+                      <label class="block text-gray-400 text-left">Cash-out</label>
+                      <input type="number" name="cashout"
+                             value="{{ player.net + (game.buyin * (1 + player.rebuys)) }}"
+                             step="1"
+                             class="w-full bg-gray-900 border border-gray-700 rounded px-2 py-0.5 text-xs text-right">
+                    </div>
+                    <div class="w-24">
+                      <label class="block text-gray-400 text-left">Rebuys</label>
+                      <input type="number" name="rebuys"
+                             value="{{ player.rebuys }}"
+                             step="1"
+                             class="w-full bg-gray-900 border border-gray-700 rounded px-2 py-0.5 text-xs text-right">
+                    </div>
+                    <button type="submit"
+                            class="w-24 text-xs text-blue-400 hover:text-blue-300 font-medium hover:underline text-center mt-1">
+                      Update
+                    </button>
+                  </div>
+                </form>
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <div class="text-center">
+    <!-- BACK LINK TO HISTORY LIST -->
+    <a href="{{ url_for('history_list') }}"
+       class="text-gray-400 hover:text-white underline">
+      ← Back to Game History
+    </a>
+  </div>
+</div>
+{% endblock %}
