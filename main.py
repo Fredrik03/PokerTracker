@@ -127,7 +127,15 @@ app.include_router(public_profile.router)
 
 # Root redirect with CSRF generation
 from deps import generate_csrf
+
+
 @app.get("/", response_class=HTMLResponse, dependencies=[Depends(generate_csrf)])
 async def root(request: Request):
     _ = request.session.get("csrf_token")
-    return RedirectResponse("/dashboard")
+
+    # Sjekk om brukeren er logget inn
+    if request.session.get("user") and not request.session.get("must_set_password"):
+        return RedirectResponse("/dashboard", 302)
+
+    # Hvis ikke logget inn, vis landingssiden
+    return templates.TemplateResponse("index.html", {"request": request})
