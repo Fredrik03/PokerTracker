@@ -11,6 +11,7 @@ from config import LOCAL_ZONE
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+
 @router.get("/admin", response_class=HTMLResponse, dependencies=[Depends(generate_csrf)])
 def admin_panel(request: Request, user=Depends(get_current_user)):
     if not user or user["is_admin"] != 1:
@@ -23,9 +24,17 @@ def admin_panel(request: Request, user=Depends(get_current_user)):
         all_players = db.execute(
             "SELECT username FROM players ORDER BY username"
         ).fetchall()
-        logs = db.execute("""
-            SELECT actor, action, target, ip_address, timestamp
+        admin_logs = db.execute("""
+            SELECT actor, action, target, ip_address, 
+                   strftime('%Y-%m-%d %H:%M', datetime(timestamp)) as timestamp
               FROM admin_log
+             ORDER BY timestamp DESC
+             LIMIT 50
+        """).fetchall()
+        auth_logs = db.execute("""
+            SELECT username, success, ip_address, 
+                   strftime('%Y-%m-%d %H:%M', datetime(timestamp)) as timestamp
+              FROM auth_log
              ORDER BY timestamp DESC
              LIMIT 50
         """).fetchall()
@@ -34,7 +43,8 @@ def admin_panel(request: Request, user=Depends(get_current_user)):
         "request": request,
         "players": players,
         "all_players": all_players,
-        "logs": logs,
+        "logs": admin_logs,
+        "auth_logs": auth_logs,
         "csrf_token": request.session.get("csrf_token")
     })
 

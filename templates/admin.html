@@ -183,5 +183,45 @@
       </table>
     </div>
   </section>
+
+    <!-- Auth Log -->
+  <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+    <h2 class="text-xl font-semibold mb-4 text-white">Authentication Log</h2>
+    <div class="overflow-y-auto max-h-64">
+      <table class="w-full text-sm text-left">
+        <thead>
+          <tr class="border-b border-gray-600 text-gray-400 uppercase text-xs">
+            <th class="px-3 py-2">Time</th>
+            <th class="px-3 py-2">Username</th>
+            <th class="px-3 py-2">Status</th>
+            <th class="px-3 py-2">IP</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+          {% for log in auth_logs %}
+          <tr>
+            <td class="px-3 py-2">{{ log.timestamp | escape }}</td>
+            <td class="px-3 py-2">{{ log.username | escape }}</td>
+            <td class="px-3 py-2">
+              {% if log.success %}
+              <span class="bg-emerald-900/50 text-emerald-400 px-2 py-1 rounded text-xs">Success</span>
+              {% else %}
+              <span class="bg-red-900/50 text-red-400 px-2 py-1 rounded text-xs">Failed</span>
+              {% endif %}
+            </td>
+            <td class="px-3 py-2">{{ log.ip_address | escape or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="px-3 py-2 text-center text-gray-400">
+              No authentication logs found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>
+
 {% endblock %}
