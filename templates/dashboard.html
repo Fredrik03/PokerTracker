@@ -13,7 +13,6 @@
 </style>
 
 <div class="fade-in space-y-10 max-w-5xl mx-auto mt-6">
-
   <h1 class="text-4xl font-bold text-center text-white tracking-tight">Dashboard</h1>
 
   <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-xl text-center text-xl font-semibold text-white">
@@ -21,28 +20,47 @@
   </div>
 
   <!-- Summary cards -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- Basic Stats -->
     <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
       <h3 class="text-sm font-medium text-gray-400">Total Sessions</h3>
       <p class="text-3xl font-bold text-white mt-2">{{ total_games }}</p>
     </div>
     <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
-      <h3 class="text-sm font-medium text-gray-400">Net Profit / Loss</h3>
+      <h3 class="text-sm font-medium text-gray-400">Net Profit/Loss</h3>
       <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if net_sum >= 0 else 'text-red-400' }}">
         {{ net_sum }} NOK
       </p>
     </div>
     <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
-      <h3 class="text-sm font-medium text-gray-400">Avg Profit</h3>
-      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if avg_profit >= 0 else 'text-red-400' }}">
-        {{ avg_profit }} NOK
+      <h3 class="text-sm font-medium text-gray-400">Win Rate</h3>
+      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if win_rate >= 50 else 'text-red-400' }}">
+        {{ win_rate }}%
       </p>
     </div>
     <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
-      <h3 class="text-sm font-medium text-gray-400">Win Rate</h3>
-      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if avg_profit >= 0 else 'text-red-400' }}">
-        {{ win_rate }} %
+      <h3 class="text-sm font-medium text-gray-400">ROI</h3>
+      <p class="text-3xl font-bold mt-2 {{ 'text-green-400' if roi >= 0 else 'text-red-400' }}">
+        {{ roi }}%
       </p>
+    </div>
+
+    <!-- Additional Stats -->
+    <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
+      <h3 class="text-sm font-medium text-gray-400">Biggest Win</h3>
+      <p class="text-3xl font-bold mt-2 text-green-400">{{ biggest_win }} NOK</p>
+    </div>
+    <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
+      <h3 class="text-sm font-medium text-gray-400">Biggest Loss</h3>
+      <p class="text-3xl font-bold mt-2 text-red-400">{{ biggest_loss }} NOK</p>
+    </div>
+    <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
+      <h3 class="text-sm font-medium text-gray-400">Total Buy-in</h3>
+      <p class="text-3xl font-bold text-white mt-2">{{ total_buyin }} NOK</p>
+    </div>
+    <div class="bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg text-center">
+      <h3 class="text-sm font-medium text-gray-400">Total Rebuys</h3>
+      <p class="text-3xl font-bold text-white mt-2">{{ total_rebuys }}</p>
     </div>
   </div>
 
@@ -80,7 +98,6 @@
       </table>
     </div>
   </section>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

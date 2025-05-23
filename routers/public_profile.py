@@ -9,73 +9,100 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-@router.get("/player/{username}", response_class=HTMLResponse)
-async def public_profile(
-    username: str,
-    request: Request,
-    current_user: dict = Depends(get_current_user),
-):
-    # 1) Auth guard
-    if not current_user:
-        return RedirectResponse("/login", status_code=302)
+@router.get("/player/{username}")
+def public_profile(request: Request, username: str):
+    try:
+        with get_db() as db:
+            # Verify player exists
+            player = db.execute(
+                "SELECT username, avatar_path FROM players WHERE username = ?",
+                (username,)
+            ).fetchone()
+            if not player:
+                raise HTTPException(status_code=404, detail="Player not found")
 
-    with get_db() as conn:
-        # 2) Fetch player record
-        player = conn.execute(
-            "SELECT username, balance, avatar_path FROM players WHERE username = ?",
-            (username,),
-        ).fetchone()
+            # Aggregate stats for the user
+            stats = db.execute("""
+                WITH user_stats AS (
+                    SELECT 
+                        COUNT(*) as total_games,
+                        COALESCE(SUM(buyin), 0) as total_buyin,
+                        COALESCE(SUM(rebuys), 0) as total_rebuys,
+                        COALESCE(SUM(buyin + (rebuys * buyin)), 0) as total_invested,
+                        MAX(net) as biggest_win,
+                        MIN(net) as biggest_loss
+                    FROM game_players
+                    WHERE username = ?
+                )
+                SELECT 
+                    s.*,
+                    p.balance as net_sum,
+                    CASE 
+                        WHEN s.total_invested > 0 
+                        THEN ROUND(CAST(p.balance AS FLOAT) / s.total_invested * 100, 2)
+                        ELSE 0 
+                    END as roi
+                FROM user_stats s
+                JOIN players p ON p.username = ?
+            """, (username, username)).fetchone()
 
-        if not player:
-            return templates.TemplateResponse(
-                "error.html",
-                {"request": request, "message": "Player not found"},
-                status_code=404,
-            )
+            # Win rate calculation
+            win_count = db.execute(
+                "SELECT COUNT(*) FROM games WHERE winner = ? AND amount > 0",
+                (username,)
+            ).fetchone()[0] or 0
 
-        # 3) Fetch games for this player
-        rows = conn.execute(
-            """
-            SELECT g.date, gp.net
-              FROM game_players gp
-              JOIN games g ON g.id = gp.game_id
-             WHERE gp.username = ?
-             ORDER BY g.date DESC
-            """,
-            (username,),
-        ).fetchall()
+            total_games = stats["total_games"]
+            win_rate = round(win_count / total_games * 100, 1) if total_games else 0
+            avg_profit = round(stats["net_sum"] / total_games, 1) if total_games else 0
 
-    # 4) Compute stats
-    total_games      = len(rows)
-    net_sum          = sum(r["net"] for r in rows) if rows else 0
-    avg_profit       = round(net_sum / total_games, 1) if total_games else 0
-    profitable_count = sum(1 for r in rows if r["net"] > 0)
-    win_rate         = round(profitable_count / total_games * 100, 1) if total_games else 0
+            # Cumulative progress chart data
+            rows = db.execute("""
+                SELECT g.date, SUM(gp.net) AS daily_net
+                FROM game_players gp
+                JOIN games g ON g.id = gp.game_id
+                WHERE gp.username = ?
+                GROUP BY g.date
+                ORDER BY g.date
+            """, (username,)).fetchall()
 
-    # 5) Build cumulative series (chronological)
-    cumulative = []
-    dates      = []
-    running    = 0
-    for game in reversed(rows):
-        running += game["net"]
-        cumulative.append(running)
-        dates.append(game["date"])
+            dates = [r["date"] for r in rows]
+            cumulative = []
+            running = 0
+            for r in rows:
+                running += r["daily_net"]
+                cumulative.append(running)
 
-    # 6) Recent 5 sessions
-    recent = rows[:5]
+            # Recent sessions
+            recent = db.execute("""
+                SELECT g.date, gp.net AS net
+                FROM game_players gp
+                JOIN games g ON g.id = gp.game_id
+                WHERE gp.username = ?
+                ORDER BY g.date DESC
+                LIMIT 10
+            """, (username,)).fetchall()
+
+    except DatabaseError:
+        raise HTTPException(status_code=500, detail="Unable to load profile data")
 
     return templates.TemplateResponse(
         "public_dashboard.html",
         {
-            "request":     request,
-            "username":    player["username"],
+            "request": request,
+            "username": username,
             "avatar_path": player["avatar_path"],
             "total_games": total_games,
-            "net_sum":     net_sum,
-            "avg_profit":  avg_profit,
-            "win_rate":    win_rate,
-            "recent":      recent,
-            "dates":       dates,
-            "cumulative":  cumulative,
-        },
+            "win_rate": win_rate,
+            "net_sum": stats["net_sum"],
+            "avg_profit": avg_profit,
+            "dates": dates,
+            "cumulative": cumulative,
+            "recent": recent,
+            "roi": stats["roi"],
+            "total_buyin": stats["total_invested"],
+            "biggest_win": stats["biggest_win"],
+            "biggest_loss": stats["biggest_loss"],
+            "total_rebuys": stats["total_rebuys"]
+        }
     )
