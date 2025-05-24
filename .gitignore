@@ -5,6 +5,8 @@ venv/
 .env
 poker.db
 app
+(2).venv
+.venv
 
 # IDE / OS files
 .idea/

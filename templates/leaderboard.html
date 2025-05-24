@@ -67,8 +67,8 @@
             <td class="px-4 py-3 text-lg font-bold">{{ loop.index }}</td>
             <td class="px-4 py-3 flex items-center justify-start space-x-3 text-left">
               {% if p.avatar_path %}
-                <img src="{{ p.avatar_path }}" alt="avatar"
-                     class="w-8 h-8 rounded-full object-cover border border-gray-600">
+                    <img src="{{ url_for('static', path=p.avatar_path) }}" alt="avatar"
+                        class="w-8 h-8 rounded-full object-cover border border-gray-600"
               {% else %}
                 <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm text-gray-300 font-bold">
                   {{ p.username[0]|upper }}

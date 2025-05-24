@@ -1,7 +1,10 @@
 import config
+import os
+import shutil
+from uuid import uuid4
 import db
 from pathlib import Path
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, File, UploadFile
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -26,6 +29,8 @@ app.mount(
     StaticFiles(directory=BASE_DIR / "static"),
     name="static"
 )
+# Create necessary directories
+os.makedirs(BASE_DIR / "static" / "avatars", exist_ok=True)
 
 # Rate limiter
 from rate_limit import limiter

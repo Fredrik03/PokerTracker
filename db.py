@@ -1,3 +1,4 @@
+
 import os
 import sqlite3
 import uuid
@@ -60,20 +61,21 @@ def init_db():
         )""")
 
         # Tenant-scoped tables:
-        # 3. Players
+        # 3. Players - Modified to use composite unique constraint
         db.execute("""
         CREATE TABLE IF NOT EXISTS players (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
+            username TEXT NOT NULL,
             password TEXT NOT NULL,
             balance INTEGER DEFAULT 0,
             is_admin INTEGER DEFAULT 0,
             must_set_password INTEGER DEFAULT 0,
             avatar_path TEXT,
-            password_changed_at TEXT
+            password_changed_at TEXT,
+            tenant_id TEXT NOT NULL,
+            FOREIGN KEY(tenant_id) REFERENCES tenants(id),
+            UNIQUE(username, tenant_id)
         )""")
-        if not column_exists(db, "players", "tenant_id"):
-            db.execute("ALTER TABLE players ADD COLUMN tenant_id TEXT")
 
         # 4. Auth log
         db.execute("""
@@ -82,10 +84,10 @@ def init_db():
             username TEXT NOT NULL,
             success BOOLEAN NOT NULL,
             ip_address TEXT NOT NULL,
-            timestamp TEXT NOT NULL
+            timestamp TEXT NOT NULL,
+            tenant_id TEXT NOT NULL,
+            FOREIGN KEY(tenant_id) REFERENCES tenants(id)
         )""")
-        if not column_exists(db, "auth_log", "tenant_id"):
-            db.execute("ALTER TABLE auth_log ADD COLUMN tenant_id TEXT")
 
         # 5. Games
         db.execute("""
@@ -95,10 +97,10 @@ def init_db():
             winner TEXT NOT NULL,
             amount INTEGER NOT NULL,
             rebuys INTEGER NOT NULL DEFAULT 0,
-            buyin INTEGER DEFAULT 0
+            buyin INTEGER DEFAULT 0,
+            tenant_id TEXT NOT NULL,
+            FOREIGN KEY(tenant_id) REFERENCES tenants(id)
         )""")
-        if not column_exists(db, "games", "tenant_id"):
-            db.execute("ALTER TABLE games ADD COLUMN tenant_id TEXT")
 
         # 6. GamePlayers
         db.execute("""
@@ -110,11 +112,10 @@ def init_db():
             rebuys INTEGER NOT NULL,
             cashout INTEGER NOT NULL,
             net INTEGER NOT NULL,
+            tenant_id TEXT NOT NULL,
             FOREIGN KEY (game_id) REFERENCES games(id),
-            FOREIGN KEY (username) REFERENCES players(username)
+            FOREIGN KEY (tenant_id) REFERENCES tenants(id)
         )""")
-        if not column_exists(db, "game_players", "tenant_id"):
-            db.execute("ALTER TABLE game_players ADD COLUMN tenant_id TEXT")
 
         # 7. Admin audit log
         db.execute("""
@@ -124,12 +125,10 @@ def init_db():
             action TEXT NOT NULL,
             target TEXT,
             ip_address TEXT,
-            timestamp TEXT NOT NULL
+            timestamp TEXT NOT NULL,
+            tenant_id TEXT NOT NULL,
+            FOREIGN KEY(tenant_id) REFERENCES tenants(id)
         )""")
-        if not column_exists(db, "admin_log", "ip_address"):
-            db.execute("ALTER TABLE admin_log ADD COLUMN ip_address TEXT")
-        if not column_exists(db, "admin_log", "tenant_id"):
-            db.execute("ALTER TABLE admin_log ADD COLUMN tenant_id TEXT")
 
         # 8. Player of the Month History
         db.execute("""
@@ -137,10 +136,10 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             month TEXT NOT NULL,
             username TEXT NOT NULL,
-            avatar_path TEXT
+            avatar_path TEXT,
+            tenant_id TEXT NOT NULL,
+            FOREIGN KEY(tenant_id) REFERENCES tenants(id)
         )""")
-        if not column_exists(db, "potm_history", "tenant_id"):
-            db.execute("ALTER TABLE potm_history ADD COLUMN tenant_id TEXT")
 
         # 9. Indexes for performance & tenant isolation
         db.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)")
@@ -157,7 +156,7 @@ def init_db():
         super_exists = db.execute(
             "SELECT 1 FROM users WHERE is_superadmin = 1"
         ).fetchone()
-        
+
         if not super_exists:
             user_id = str(uuid.uuid4())
             hashed_password = pwd_context.hash(ADMIN_PASSWORD)
@@ -166,7 +165,5 @@ def init_db():
                 (user_id, ADMIN_USERNAME, hashed_password, 1, datetime.utcnow().isoformat())
             )
             print(f"[startup] Created super admin user: {ADMIN_USERNAME}")
-
-        # 2. Create tenant admin if not exists
 
         db.commit()

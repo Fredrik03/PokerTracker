@@ -1,8 +1,12 @@
-from fastapi import APIRouter, Request, Form, Depends, HTTPException
+from fastapi import APIRouter, Request, Form, Depends, HTTPException, File, UploadFile
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from passlib.context import CryptContext
 from sqlite3 import DatabaseError
+import os
+import shutil
+from uuid import uuid4
+from pathlib import Path
 
 from deps import get_current_user, tenant_required, get_tenant_db, generate_csrf, verify_csrf
 from datetime import datetime
@@ -126,24 +130,53 @@ def change_password(
     response_class=HTMLResponse,
     dependencies=[Depends(verify_csrf), Depends(tenant_required)]
 )
-def update_avatar(
-    request: Request,
-    avatar_path: str = Form(...),
-    user=Depends(get_current_user),
-    db=Depends(get_tenant_db)
+async def update_avatar(
+        request: Request,
+        file: UploadFile = File(...),
+        user=Depends(get_current_user),
+        db=Depends(get_tenant_db)
 ):
     if not user:
         return RedirectResponse("/login", status_code=302)
 
     tenant_id = request.state.tenant_id
 
+    # Generate unique filename
+    file_extension = os.path.splitext(file.filename)[1].lower()
+    if file_extension not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+        return templates.TemplateResponse(
+            "profile.html",
+            {
+                "request": request,
+                "username": user["username"],
+                "balance": user["balance"],
+                "is_admin": user["is_admin"],
+                "avatar_path": None,
+                "error": "Invalid file type. Please upload an image file.",
+                "csrf_token": request.session.get("csrf_token"),
+            }
+        )
+
+    unique_filename = f"{uuid4()}{file_extension}"
+    avatar_path = f"avatars/{unique_filename}"
+    file_path = BASE_DIR / "static" / avatar_path
+
+    # Save the file
     try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Update database with new path
         db.execute(
             "UPDATE players SET avatar_path = ? WHERE username = ? AND tenant_id = ?",
             (avatar_path, user["username"], tenant_id)
         )
         db.commit()
-    except DatabaseError:
-        raise HTTPException(500, "Unable to update avatar")
+
+        return RedirectResponse("/profile", status_code=302)
+    except Exception as e:
+        raise HTTPException(500, f"Unable to update avatar: {str(e)}")
+    finally:
+        file.file.close()
 
     return RedirectResponse("/profile", status_code=302)

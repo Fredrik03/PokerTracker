@@ -21,14 +21,45 @@
 
 <div class="fade-in space-y-12 max-w-5xl mx-auto mt-8">
   <!-- Toggle Buttons -->
-  <div class="flex justify-center mb-8">
-    <button id="monthlyBtn" class="bg-blue-600 text-white px-4 py-2 rounded-l hover:bg-blue-700 transition-colors duration-200">Monthly</button>
-    <button id="globalBtn" class="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700 transition-colors duration-200">All-Time</button>
-  </div>
+<div class="flex justify-center mt-6">
+  <div class="rounded-xl bg-[#10182A] border border-[#1e2a3f] shadow-md w-36 overflow-hidden p-1">
 
-  <!-- Monthly Stats -->
+    <!-- Monthly -->
+    <button id="monthlyBtn"
+      class="flex items-center justify-center w-full px-3 py-3 text-sm font-bold text-white rounded-t-lg transition-all duration-200 bg-gradient-to-r from-blue-500 to-blue-600 shadow-md hover:bg-[#1C253A] hover:text-white">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+      Monthly
+    </button>
+
+    <!-- All-Time -->
+    <button id="globalBtn"
+      class="flex items-center justify-center w-full px-3 py-3 text-sm font-bold text-gray-400 bg-[#10182A] hover:bg-[#1C253A] hover:text-white rounded-b-lg transition-all duration-200">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+      All-Time
+    </button>
+
+  </div>
+</div>
+
+
+
+  <!-- Monthly Stats Section -->
   <div id="monthlyStats">
-    <h1 class="text-4xl font-bold text-center text-white tracking-tight">📆 Monthly Stats</h1>
+    <h1 class="text-4xl font-bold text-center text-white tracking-tight">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 inline-block mr-2 -mt-2" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 2px #4df2ff)"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Monthly Stats
+    </h1>
     <div class="space-y-12 mt-6">
       {% if m.is_final_week %}
         <div class="relative bg-gray-800 p-6 rounded-lg shadow-xl text-center overflow-hidden min-h-[180px]">
@@ -37,7 +68,7 @@
           {% endif %}
           <h2 class="text-xl font-semibold text-yellow-400 mb-2 relative z-10">Player of the Month 🏆</h2>
           {% if m.player_of_month_avatar %}
-            <img src="{{ m.player_of_month_avatar }}" class="w-16 h-16 mx-auto rounded-full border border-gray-600 mb-2 relative z-10">
+            <img src="{{ url_for('static', path=m.player_of_month_avatar) }}" class="w-16 h-16 mx-auto rounded-full border border-gray-600 mb-2 relative z-10">
           {% else %}
             <div class="w-16 h-16 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2 relative z-10">
               {{ m.player_of_month[0]|upper if m.player_of_month != "N/A" else "?" }}
@@ -55,7 +86,7 @@
           {% if second %}
             <div class="silver w-40 h-48 rounded-t-lg shadow-lg flex flex-col justify-end items-center p-4">
               {% if second.avatar %}
-                <img src="{{ second.avatar }}" class="w-14 h-14 rounded-full border border-gray-600 mb-2">
+                <img src="{{ url_for('static', path=second.avatar) }}" class="w-14 h-14 rounded-full border border-gray-600 mb-2">
               {% else %}
                 <div class="w-14 h-14 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ second.username[0]|upper }}</div>
               {% endif %}
@@ -68,7 +99,7 @@
           {% if first %}
             <div class="gold w-48 h-64 rounded-t-lg shadow-2xl flex flex-col justify-end items-center p-4">
               {% if first.avatar %}
-                <img src="{{ first.avatar }}" class="w-16 h-16 rounded-full border border-gray-600 mb-2">
+                <img src="{{ url_for('static', path=first.avatar) }}" class="w-16 h-16 rounded-full border border-gray-600 mb-2">
               {% else %}
                 <div class="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ first.username[0]|upper }}</div>
               {% endif %}
@@ -81,7 +112,7 @@
           {% if third %}
             <div class="bronze w-36 h-40 rounded-t-lg shadow-lg flex flex-col justify-end items-center p-4">
               {% if third.avatar %}
-                <img src="{{ third.avatar }}" class="w-12 h-12 rounded-full border border-gray-600 mb-2">
+                <img src="{{ url_for('static', path=third.avatar) }}" class="w-12 h-12 rounded-full border border-gray-600 mb-2">
               {% else %}
                 <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ third.username[0]|upper }}</div>
               {% endif %}
@@ -94,52 +125,84 @@
       {% endif %}
 
       <!-- Biggest Win / Worst Loss -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {% for label, value, avatar in [("Biggest Win", m.biggest_win, m.biggest_winner_avatar),("Worst Loss", m.worst_loss, m.worst_loser_avatar)] %}
-          <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
-            <h3 class="text-sm text-gray-400 mb-2">{{ label }}</h3>
-            {% if avatar %}
-              <img src="{{ avatar }}" class="w-12 h-12 mx-auto rounded-full border border-gray-600 mb-2">
-            {% else %}
-              <div class="w-12 h-12 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-lg mb-2">{{ "?" }}</div>
-            {% endif %}
-            <p class="{{ 'text-green-400' if label=='Biggest Win' else 'text-red-400' }} text-2xl font-bold">{{ value }} NOK</p>
-          </div>
-        {% endfor %}
-      </div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+  {% for label, value, avatar, color, icon in [
+    ("Biggest Win", m.biggest_win, m.biggest_winner_avatar, "text-green-400",
+      '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>'),
+    ("Worst Loss", m.worst_loss, m.worst_loser_avatar, "text-red-400",
+      '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 18l-9.5-9.5-5 5L1 6"/><path d="M17 18h6v-6"/></svg>')
+  ] %}
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+      <h3 class="text-sm text-gray-400 mb-2">
+        <span class="{{ color }}">{{ icon|safe }}</span>
+        {{ label }}
+      </h3>
+      {% if avatar %}
+        <img src="{{ url_for('static', path=avatar) }}" class="w-12 h-12 mx-auto rounded-full border border-gray-600 mb-2">
+      {% else %}
+        <div class="w-12 h-12 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-lg mb-2">{{ "?" }}</div>
+      {% endif %}
+      <p class="{{ color }} text-2xl font-bold">{{ value }} NOK</p>
+    </div>
+  {% endfor %}
+</div>
 
       <!-- Other Stat Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for title,user,avatar,val,color in [
-          ("Top Earner", m.top_earner, m.top_earner_avatar, m.top_earner_amount ~ " NOK", "text-green-400"),
-          ("Top Loser", m.top_loser, m.top_loser_avatar, m.top_loser_amount ~ " NOK", "text-red-400"),
-          ("Most Re-buys", m.top_rebuyer, m.top_rebuyer_avatar, m.total_rebuys ~ " re-buys", "text-yellow-400"),
-          ("Best ROI", m.roi_user, m.roi_user_avatar, m.best_roi ~ " %", "text-purple-400"),
-          ("Most Consistent", m.most_consistent_user, m.most_consistent_avatar, "±" ~ m.consistent_user_avg ~ " NOK", "text-blue-400"),
-          ("Most Comebacks", m.comeback_user, m.comeback_avatar, "+" ~ m.comeback_net ~ " NOK", "text-cyan-400")
-        ] %}
-          <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
-            <h3 class="text-sm text-gray-400 mb-2">{{ title }}</h3>
-            {% if avatar %}
-              <img src="{{ avatar }}" class="w-14 h-14 mx-auto rounded-full border border-gray-600 mb-2">
-            {% else %}
-              <div class="w-14 h-14 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ user[0]|upper if user!='N/A' else '?' }}</div>
-            {% endif %}
-            <p class="{{ color }} text-xl font-bold">{{ val }}</p>
-            <p class="text-sm text-gray-400">{{ user }}</p>
-          </div>
-        {% endfor %}
-      </div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  {% for title, user, avatar, val, color, icon in [
+    ("Top Earner", m.top_earner, m.top_earner_avatar, m.top_earner_amount ~ " NOK", "text-green-400",
+      '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>'),
+    ("Top Loser", m.top_loser, m.top_loser_avatar, m.top_loser_amount ~ " NOK", "text-red-400",
+      '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4v4h-4z"/><path d="M6.5 7.5L4 10l6 6 6-6-2.5-2.5h-7Z"/><path d="M4 22V10l6 6 6-6v12"/></svg>'),
+    ("Most Re-buys", m.top_rebuyer, m.top_rebuyer_avatar, m.total_rebuys ~ " re-buys", "text-yellow-400",
+      '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>'),
+    ("Best ROI", m.roi_user, m.roi_user_avatar, m.best_roi ~ " %", "text-purple-400",
+      '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'),
+    ("Most Consistent", m.most_consistent_user, m.most_consistent_avatar, "±" ~ m.consistent_user_avg ~ " NOK", "text-blue-400",
+      '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M2 12l10-7M2 12l10 7M22 12l-10-7M22 12l-10 7"/></svg>'),
+    ("Most Comebacks", m.comeback_user, m.comeback_avatar, "+" ~ m.comeback_net ~ " NOK", "text-cyan-400",
+      '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>')
+  ] %}
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+      <h3 class="text-sm text-gray-400 mb-2">
+        <span class="{{ color }}">{{ icon|safe }}</span>
+        {{ title }}
+      </h3>
+      {% if avatar %}
+        <img src="{{ url_for('static', path=avatar) }}" class="w-14 h-14 mx-auto rounded-full border border-gray-600 mb-2">
+      {% else %}
+        <div class="w-14 h-14 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ user[0]|upper if user!='N/A' else '?' }}</div>
+      {% endif %}
+      <p class="{{ color }} text-xl font-bold">{{ val }}</p>
+      <p class="text-sm text-gray-400">{{ user }}</p>
+    </div>
+  {% endfor %}
+</div>
 
       <!-- Top 5 Monthly Earners Table -->
       <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
         <h2 class="text-xl font-semibold mb-4 text-white">Top 5 Monthly Earners</h2>
         <div class="overflow-x-auto">
-          <table class="w-full table-auto text-sm"><thead><tr class="text-gray-400 uppercase text-xs border-b border-gray-600"><th class="px-4 py-2">Player</th><th class="px-4 py-2 text-right">Net</th></tr></thead><tbody class="divide-y divide-gray-700">
-            {% for p in m.top_monthly_earners %}
-              <tr><td class="px-4 py-2 font-medium">{{ p.username }}</td><td class="px-4 py-2 text-right text-green-400 font-semibold">{{ p.net }} NOK</td></tr>
-            {% else %}<tr><td colspan="2" class="px-4 py-2 text-center text-gray-400">No data.</td></tr>{% endfor %}
-          </tbody></table>
+          <table class="w-full table-auto text-sm">
+            <thead>
+              <tr class="text-gray-400 uppercase text-xs border-b border-gray-600">
+                <th class="px-4 py-2">Player</th>
+                <th class="px-4 py-2 text-right">Net</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700">
+              {% for p in m.top_monthly_earners %}
+                <tr>
+                  <td class="px-4 py-2 font-medium">{{ p.username }}</td>
+                  <td class="px-4 py-2 text-right text-green-400 font-semibold">{{ p.net }} NOK</td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="2" class="px-4 py-2 text-center text-gray-400">No data.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
@@ -155,7 +218,7 @@
           <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
             <h3 class="text-sm text-gray-400 mb-2">{{ label }}</h3>
             {% if avatar %}
-              <img src="{{ avatar }}" class="w-12 h-12 mx-auto rounded-full border border-gray-600 mb-2">
+              <img src="{{ url_for('static', path=avatar) }}" class="w-12 h-12 mx-auto rounded-full border border-gray-600 mb-2">
             {% else %}
               <div class="w-12 h-12 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-lg mb-2">{{ "?" }}</div>
             {% endif %}
@@ -177,7 +240,7 @@
           <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
             <h3 class="text-sm text-gray-400 mb-2">{{ title }}</h3>
             {% if avatar %}
-              <img src="{{ avatar }}" class="w-14 h-14 mx-auto rounded-full border border-gray-600 mb-2">
+              <img src="{{ url_for('static', path=avatar) }}" class="w-14 h-14 mx-auto rounded-full border border-gray-600 mb-2">
             {% else %}
               <div class="w-14 h-14 mx-auto rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-xl mb-2">{{ user[0]|upper if user!='N/A' else '?' }}</div>
             {% endif %}
@@ -191,34 +254,60 @@
       <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
         <h2 class="text-xl font-semibold mb-4 text-white">Top 5 All-Time Earners</h2>
         <div class="overflow-x-auto">
-          <table class="w-full table-auto text-sm"><thead><tr class="text-gray-400 uppercase text-xs border-b border-gray-600"><th class="px-4 py-2">Player</th><th class="px-4 py-2 text-right">Net</th></tr></thead><tbody class="divide-y divide-gray-700">
-            {% for p in g.top_global_earners %}
-              <tr><td class="px-4 py-2 font-medium">{{ p.username }}</td><td class="px-4 py-2 text-right text-green-400 font-semibold">{{ p.net }} NOK</td></tr>
-            {% else %}<tr><td colspan="2" class="px-4 py-2 text-center text-gray-400">No data.</td></tr>{% endfor %}
-          </tbody></table>
+          <table class="w-full table-auto text-sm">
+            <thead>
+              <tr class="text-gray-400 uppercase text-xs border-b border-gray-600">
+                <th class="px-4 py-2">Player</th>
+                <th class="px-4 py-2 text-right">Net</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700">
+              {% for p in g.top_global_earners %}
+                <tr>
+                  <td class="px-4 py-2 font-medium">{{ p.username }}</td>
+                  <td class="px-4 py-2 text-right text-green-400 font-semibold">{{ p.net }} NOK</td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="2" class="px-4 py-2 text-center text-gray-400">No data.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </section>
 
       <!-- Player of the Month History -->
       <section class="bg-gray-800 p-8 rounded-lg shadow-lg">
         <h2 class="text-xl font-semibold mb-4 text-white">Player of the Month History</h2>
-        <table class="w-full table-auto text-sm"><thead><tr class="text-gray-400 uppercase text-xs border-b border-gray-600"><th class="px-4 py-2">Month</th><th class="px-4 py-2">Player</th><th class="px-4 py-2">Avatar</th></tr></thead><tbody class="divide-y divide-gray-700">
-          {% for row in g.potm_history %}
-            <tr>
-              <td class="px-4 py-2">{{ row.month }}</td>
-              <td class="px-4 py-2">{{ row.username }}</td>
-              <td class="px-4 py-2">
-                {% if row.avatar_path %}
-                  <img src="{{ row.avatar_path }}" class="w-8 h-8 rounded-full border border-gray-600">
-                {% else %}
-                  <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white text-sm font-bold">{{ row.username[0]|upper }}</div>
-                {% endif %}
-              </td>
+        <table class="w-full table-auto text-sm">
+          <thead>
+            <tr class="text-gray-400 uppercase text-xs border-b border-gray-600">
+              <th class="px-4 py-2">Month</th>
+              <th class="px-4 py-2">Player</th>
+              <th class="px-4 py-2">Avatar</th>
             </tr>
-          {% else %}
-            <tr><td colspan="3" class="px-4 py-2 text-center text-gray-400">No data.</td></tr>
-          {% endfor %}
-        </tbody></table>
+          </thead>
+          <tbody class="divide-y divide-gray-700">
+            {% for row in g.potm_history %}
+              <tr>
+                <td class="px-4 py-2">{{ row.month }}</td>
+                <td class="px-4 py-2">{{ row.username }}</td>
+                <td class="px-4 py-2">
+                  {% if row.avatar %}
+                    <img src="{{ url_for('static', path=row.avatar) }}" class="w-8 h-8 rounded-full border border-gray-600">
+                  {% else %}
+                    <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white text-sm font-bold">{{ row.username[0]|upper }}</div>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="3" class="px-4 py-2 text-center text-gray-400">No data.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </section>
     </div>
   </div>
@@ -230,11 +319,22 @@
   const mSec = document.getElementById('monthlyStats');
   const gSec = document.getElementById('globalStats');
 
-  function updateButtonStates(activeBtn, inactiveBtn) {
-    activeBtn.classList.add('bg-blue-600');
-    activeBtn.classList.remove('bg-gray-700');
-    inactiveBtn.classList.add('bg-gray-700');
-    inactiveBtn.classList.remove('bg-blue-600');
+  function setActiveButton(button, fromColor, toColor) {
+    button.classList.add("bg-gradient-to-r", fromColor, toColor, "text-white", "shadow-md");
+    button.classList.remove("text-gray-400", "hover:text-white");
+  }
+
+  function resetButton(button) {
+    button.classList.remove(
+      "bg-gradient-to-r",
+      "from-purple-500",
+      "to-fuchsia-600",
+      "from-blue-500",
+      "to-blue-600",
+      "shadow-md",
+      "text-white"
+    );
+    button.classList.add("text-gray-400", "hover:text-white");
   }
 
   monthlyBtn.addEventListener('click', () => {
@@ -244,10 +344,13 @@
       mSec.style.display = 'block';
       gSec.style.display = 'none';
       setTimeout(() => {
+        mSec.classList.add("fade-in");
+        gSec.classList.remove("fade-in");
         mSec.style.opacity = '1';
       }, 50);
     }, 200);
-    updateButtonStates(monthlyBtn, globalBtn);
+    setActiveButton(monthlyBtn, "from-blue-500", "to-blue-600");
+    resetButton(globalBtn);
   });
 
   globalBtn.addEventListener('click', () => {
@@ -257,18 +360,24 @@
       mSec.style.display = 'none';
       gSec.style.display = 'block';
       setTimeout(() => {
+        gSec.classList.add("fade-in");
+        mSec.classList.remove("fade-in");
         gSec.style.opacity = '1';
       }, 50);
     }, 200);
-    updateButtonStates(globalBtn, monthlyBtn);
+    setActiveButton(globalBtn, "from-purple-500", "to-fuchsia-600");
+    resetButton(monthlyBtn);
   });
 
-  // Initialiser siden
   document.addEventListener('DOMContentLoaded', () => {
-    // Legg til transition styles
-    mSec.style.transition = 'opacity 0.2s ease-in-out';
-    gSec.style.transition = 'opacity 0.2s ease-in-out';
+    mSec.style.transition = 'opacity 0.5s ease-out';
+    gSec.style.transition = 'opacity 0.5s ease-out';
+
+    // Set default to Monthly view
     monthlyBtn.click();
   });
 </script>
+
+
+
 {% endblock %}
