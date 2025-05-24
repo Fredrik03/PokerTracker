@@ -2,26 +2,48 @@ from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from passlib.context import CryptContext
-from db import get_db
-from deps import get_current_user, generate_csrf, verify_csrf
+from sqlite3 import DatabaseError
+
+from deps import get_current_user, tenant_required, get_tenant_db, generate_csrf, verify_csrf
 from datetime import datetime
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-@router.get("/profile", response_class=HTMLResponse, dependencies=[Depends(generate_csrf)])
-def profile(request: Request, user=Depends(get_current_user)):
+
+@router.get(
+    "/profile",
+    response_class=HTMLResponse,
+    dependencies=[Depends(generate_csrf), Depends(tenant_required)]
+)
+def profile(
+    request: Request,
+    user=Depends(get_current_user),
+    db=Depends(get_tenant_db)
+):
     if not user:
         return RedirectResponse("/login", status_code=302)
-    with get_db() as db:
-        full_user = db.execute("SELECT * FROM players WHERE username = ?", (user["username"],)).fetchone()
+
+    tenant_id = request.state.tenant_id
+
+    try:
+        # Fetch full user record for this tenant
+        full_user = db.execute(
+            "SELECT * FROM players WHERE username = ? AND tenant_id = ?",
+            (user["username"], tenant_id)
+        ).fetchone()
+
         history = db.execute(
-            "SELECT date, amount FROM games WHERE winner = ? ORDER BY date DESC", (user["username"],)
+            "SELECT date, amount FROM games WHERE winner = ? AND tenant_id = ? ORDER BY date DESC",
+            (user["username"], tenant_id)
         ).fetchall()
 
-    # Safely access avatar_path column
-    avatar = full_user["avatar_path"] if "avatar_path" in full_user.keys() else None
+    except DatabaseError:
+        raise HTTPException(500, "Unable to load profile data")
+
+    avatar = full_user["avatar_path"] if full_user else None
+
 
     return templates.TemplateResponse(
         "profile.html",
@@ -38,77 +60,90 @@ def profile(request: Request, user=Depends(get_current_user)):
         }
     )
 
-@router.post("/profile/change-password", response_class=HTMLResponse, dependencies=[Depends(verify_csrf)])
+
+@router.post(
+    "/profile/change-password",
+    response_class=HTMLResponse,
+    dependencies=[Depends(verify_csrf), Depends(tenant_required)]
+)
 def change_password(
     request: Request,
     old_password: str = Form(...),
     new_password: str = Form(...),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
+    db=Depends(get_tenant_db)
 ):
     if not user:
         return RedirectResponse("/login", status_code=302)
-    error = None
-    msg = None
-    if not pwd.verify(old_password, user["password"]):
-        error = "Old password is incorrect."
-    else:
-        hashed = pwd.hash(new_password)
-        with get_db() as db:
-            db.execute(
-                "UPDATE players SET password = ? WHERE username = ?", (hashed, user["username"])
-            )
-            db.commit()
-        msg = "Password updated successfully."
-    with get_db() as db:
-        full_user = db.execute("SELECT * FROM players WHERE username = ?", (user["username"],)).fetchone()
-        history = db.execute(
-            "SELECT date, amount FROM games WHERE winner = ? ORDER BY date DESC", (user["username"],)
-        ).fetchall()
-    avatar = full_user["avatar_path"] if "avatar_path" in full_user.keys() else None
-    return templates.TemplateResponse(
-        "profile.html",
-        {
-            "request": request,
-            "username": user["username"],
-            "balance": user["balance"],
-            "is_admin": user["is_admin"],
-            "avatar_path": avatar,
-            "history": history,
-            "error": error,
-            "msg": msg,
-            "csrf_token": request.session.get("csrf_token"),
-        }
-    )
 
-@router.post("/profile/avatar", response_class=HTMLResponse, dependencies=[Depends(verify_csrf)])
+    tenant_id = request.state.tenant_id
+
+    # Fetch full user data again to use in response context
+    full_user = db.execute(
+        "SELECT * FROM players WHERE username = ? AND tenant_id = ?",
+        (user["username"], tenant_id)
+    ).fetchone()
+
+    history = db.execute(
+        "SELECT date, amount FROM games WHERE winner = ? AND tenant_id = ? ORDER BY date DESC",
+        (user["username"], tenant_id)
+    ).fetchall()
+
+    stored = db.execute(
+        "SELECT password FROM players WHERE username = ? AND tenant_id = ?",
+        (user["username"], tenant_id)
+    ).fetchone()
+
+    if not stored or not pwd.verify(old_password, stored["password"]):
+        return templates.TemplateResponse(
+            "profile.html",
+            {
+                "request": request,
+                "username": user["username"],
+                "balance": user.get("balance"),
+                "is_admin": bool(user.get("is_admin")),
+                "avatar_path": full_user.get("avatar_path") if full_user else None,
+                "history": history,
+                "error": "Old password is incorrect.",
+                "msg": None,
+                "csrf_token": request.session.get("csrf_token"),
+            }
+        )
+
+    # Update to new password
+    hashed = pwd.hash(new_password)
+    db.execute(
+        "UPDATE players SET password = ?, password_changed_at = ? WHERE username = ? AND tenant_id = ?",
+        (hashed, datetime.utcnow().isoformat(), user["username"], tenant_id)
+    )
+    db.commit()
+
+    return RedirectResponse("/profile", status_code=302)
+
+
+@router.post(
+    "/profile/avatar",
+    response_class=HTMLResponse,
+    dependencies=[Depends(verify_csrf), Depends(tenant_required)]
+)
 def update_avatar(
     request: Request,
     avatar_path: str = Form(...),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
+    db=Depends(get_tenant_db)
 ):
     if not user:
         return RedirectResponse("/login", status_code=302)
-    with get_db() as db:
+
+    tenant_id = request.state.tenant_id
+
+    try:
         db.execute(
-            "UPDATE players SET avatar_path = ? WHERE username = ?", (avatar_path, user["username"])
+            "UPDATE players SET avatar_path = ? WHERE username = ? AND tenant_id = ?",
+            (avatar_path, user["username"], tenant_id)
         )
         db.commit()
-        full_user = db.execute("SELECT * FROM players WHERE username = ?", (user["username"],)).fetchone()
-        history = db.execute(
-            "SELECT date, amount FROM games WHERE winner = ? ORDER BY date DESC", (user["username"],)
-        ).fetchall()
-    avatar = full_user["avatar_path"] if "avatar_path" in full_user.keys() else None
-    return templates.TemplateResponse(
-        "profile.html",
-        {
-            "request": request,
-            "username": user["username"],
-            "balance": user["balance"],
-            "is_admin": user["is_admin"],
-            "avatar_path": avatar,
-            "history": history,
-            "error": None,
-            "msg": "Avatar updated successfully!",
-            "csrf_token": request.session.get("csrf_token"),
-        }
-    )
+    except DatabaseError:
+        raise HTTPException(500, "Unable to update avatar")
+
+    return RedirectResponse("/profile", status_code=302)

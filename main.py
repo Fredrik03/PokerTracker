@@ -18,14 +18,8 @@ db.init_db()
 pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI()
-import db
-db.init_db()
 
-# Password hasher for bootstrap
-pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-app = FastAPI()
-# Mount static files (absolute path)
+# Mount static files
 BASE_DIR = Path(__file__).resolve().parent
 app.mount(
     "/static",
@@ -39,24 +33,6 @@ app.state.limiter = limiter
 @app.exception_handler(RateLimitExceeded)
 def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(status_code=429, content={"error": "Too many requests."})
-
-# Bootstrap the admin account on startup
-@app.on_event("startup")
-def bootstrap_admin():
-    from db import get_db
-    username = config.ADMIN_USERNAME
-    with get_db() as conn:
-        exists = conn.execute(
-            "SELECT 1 FROM players WHERE username = ?", (username,)
-        ).fetchone()
-        if not exists:
-            # Create account requiring password set on first login
-            conn.execute(
-                "INSERT INTO players (username, password, is_admin, must_set_password) VALUES (?, ?, 1, 1)",
-                (username, "")
-            )
-            conn.commit()
-            print(f"[startup] Bootstrapped admin account '{username}', requires password set.")
 
 # Middleware
 class InitialPasswordMiddleware(BaseHTTPMiddleware):
@@ -72,7 +48,10 @@ class InitialPasswordMiddleware(BaseHTTPMiddleware):
 class NoCacheMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        protected = ["/dashboard","/profile","/leaderboard","/player/","/monthly-stats","/global-stats","/history","/admin"]
+        protected = [
+            "/dashboard","/profile","/leaderboard","/player/",
+            "/monthly-stats","/history","/admin"
+        ]
         if any(request.url.path.startswith(p) for p in protected):
             response.headers.update({
                 "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -83,6 +62,8 @@ class NoCacheMiddleware(BaseHTTPMiddleware):
         return response
 
 # Register middleware
+from middlewares.tenant_middleware import tenant_middleware
+app.middleware("http")(tenant_middleware) 
 app.add_middleware(InitialPasswordMiddleware)
 app.add_middleware(
     SessionMiddleware,
@@ -101,41 +82,49 @@ app.add_middleware(SecurityHeadersMiddleware)
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # Include routers
-import routers.auth as auth
-import routers.stats as stats
-import routers.dashboard as dashboard
-import routers.games as games
-import routers.admin as admin
-import routers.profile as profile
-import routers.history as history
-import routers.global_stats as global_stats
-import routers.monthly_stats as monthly_stats
-import routers.leaderboard as leaderboard
+import routers.auth           as auth
+import routers.stats          as stats
+import routers.dashboard      as dashboard
+import routers.games          as games
+import routers.admin          as site_admin      # site-only tenant admin
+import routers.super_admin    as super_admin     # global super-admin
+import routers.profile        as profile
+import routers.history        as history
+import routers.leaderboard    as leaderboard
 import routers.public_profile as public_profile
 
 app.include_router(auth.router)
 app.include_router(stats.router)
 app.include_router(dashboard.router)
 app.include_router(games.router)
-app.include_router(admin.router)
+
+# 1) Tenant-scoped "site admin" comes first
+app.include_router(site_admin.router)
+
+# 2) Global "super-admin" on bare domain only
+app.include_router(super_admin.router)
+
+# 3) All other tenant-scoped routers
 app.include_router(profile.router)
 app.include_router(history.router)
-app.include_router(global_stats.router)
-app.include_router(monthly_stats.router)
+# monthly_stats removed since not used
 app.include_router(leaderboard.router)
 app.include_router(public_profile.router)
 
 # Root redirect with CSRF generation
 from deps import generate_csrf
 
-
 @app.get("/", response_class=HTMLResponse, dependencies=[Depends(generate_csrf)])
 async def root(request: Request):
-    _ = request.session.get("csrf_token")
+    host = request.headers.get("host", "").split(":")[0]
+    base = config.BASE_DOMAIN
 
-    # Sjekk om brukeren er logget inn
+    # If root domain: redirect to super admin login
+    if host == base or "localhost" in host or "127." in host:
+        return RedirectResponse("/admin/login", status_code=302)
+
+    # Otherwise: normal tenant user flow
+    _ = request.session.get("csrf_token")
     if request.session.get("user") and not request.session.get("must_set_password"):
         return RedirectResponse("/dashboard", 302)
-
-    # Hvis ikke logget inn, vis landingssiden
     return templates.TemplateResponse("index.html", {"request": request})

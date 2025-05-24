@@ -1,40 +1,65 @@
-from fastapi import Request, HTTPException, Depends
-from db import get_db
 import secrets
+import sqlite3
+from db import get_db
+from fastapi import Request, HTTPException, Depends
+from config import DATABASE_URL
 
-# CSRF constants
-CSRF_SESSION_KEY = "csrf_token"
-CSRF_FORM_FIELD = "csrf_token"
-CSRF_HEADER = "x-csrf-token"
-
-async def generate_csrf(request: Request) -> str:
-    """
-    Ensure there's a CSRF token in the session and return it.
-    Use this in GET routes (via Depends) to inject a fresh token into templates.
-    """
-    if CSRF_SESSION_KEY not in request.session:
-        request.session[CSRF_SESSION_KEY] = secrets.token_urlsafe(32)
-    return request.session[CSRF_SESSION_KEY]
-
-async def verify_csrf(request: Request):
-    """
-    Validate that the token sent in the form or header matches the one in session.
-    Attach as a dependency on all POST handlers.
-    """
-    form = await request.form()
-    token = form.get(CSRF_FORM_FIELD)
-    # Fallback to header
+# --- CSRF protection ---
+def generate_csrf(request: Request) -> str:
+    token = request.session.get("csrf_token")
     if not token:
-        token = request.headers.get(CSRF_HEADER)
-    if not token or token != request.session.get(CSRF_SESSION_KEY):
+        token = secrets.token_hex(16)
+        request.session["csrf_token"] = token
+    return token
+
+async def verify_csrf(request: Request) -> bool:
+    form = await request.form()
+    token = form.get("csrf_token")
+    if not token or token != request.session.get("csrf_token"):
         raise HTTPException(status_code=400, detail="Invalid CSRF token")
+    return True
 
-
+# --- Current user ---
 def get_current_user(request: Request):
     username = request.session.get("user")
-    if not username:
+    tenant_id = getattr(request.state, "tenant_id", None)
+
+    if not username or tenant_id is None:
         return None
-    with get_db() as db:
-        return db.execute(
-            "SELECT * FROM players WHERE username = ?", (username,)
-        ).fetchone()
+
+    db = get_db()
+    user = db.execute(
+        "SELECT * FROM players WHERE username = ? AND tenant_id = ?",
+        (username, tenant_id)
+    ).fetchone()
+
+    return user
+
+# --- Tenant scoping ---
+def tenant_required(request: Request) -> str:
+    """
+    Ensures this is a tenant subdomain and returns the tenant_id.
+    Raises 403 if on the main domain.
+    """
+    tid = getattr(request.state, "tenant_id", None)
+    if tid is None:
+        raise HTTPException(
+            status_code=403,
+            detail="This endpoint only works on a tenant subdomain"
+        )
+    return tid
+
+# --- Per-request DB for tenants ---
+def get_tenant_db(
+    tenant_id: str = Depends(tenant_required),
+):
+    """
+    Yields a fresh sqlite3.Connection for the current tenant
+    and closes it when the request is done.
+    """
+    conn = sqlite3.connect(DATABASE_URL, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()

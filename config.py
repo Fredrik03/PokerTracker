@@ -25,3 +25,17 @@ else:
 # Bootstrap admin account:
 ADMIN_USERNAME  = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD  = os.getenv("ADMIN_PASSWORD", "changeme")  # must be changed!
+
+# ——————————————————————————————————————————————————————————————
+# Tenant / domain configuration (for TenantMiddleware)
+
+# Environment-specific settings
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+# The "public" hostname your app answers on.
+# In production: "pokertracker.net"
+# Locally: use "pokertracker.test" for local development
+BASE_DOMAIN = "pokertracker.test"
+
+# Whether to treat www.<BASE_DOMAIN> as the same as the bare domain
+WWW_ALIAS = True

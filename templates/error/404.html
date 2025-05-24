@@ -1,0 +1,14 @@
+<!-- templates/site_not_found.html -->
+{% extends "base.html" %}
+
+{% block title %}Site Not Found{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-900 text-white p-6">
+  <div class="max-w-md text-center space-y-6">
+    <h1 class="text-4xl font-bold text-red-400">Site Not Found</h1>
+    <p class="text-gray-300">The subdomain <span class="text-white font-semibold">{{ subdomain }}</span> doesn't exist or is not active.</p>
+    <a href="https://pokertracker.net" class="text-blue-400 hover:underline">Return to main site</a>
+  </div>
+</div>
+{% endblock %}
